@@ -1,0 +1,592 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    line-height: 1.5;
+}
+
+.app {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Шапка */
+.header {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 24px;
+}
+
+.header-content {
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    letter-spacing: 0.5px;
+}
+
+/* Статус сервера */
+.server-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #666;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f0b400;
+}
+
+.status-indicator.online {
+    background: #00a86b;
+}
+
+.status-indicator.offline {
+    background: #dc3545;
+}
+
+/* Основной контент */
+.main {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    padding: 32px;
+    margin-bottom: 20px;
+}
+
+.lab-header {
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+.lab-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.lab-header p {
+    color: #666;
+    font-size: 14px;
+}
+
+/* Секции */
+.section-header {
+    margin-bottom: 20px;
+}
+
+.section-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* Карусель */
+.carousel-section {
+    margin-bottom: 40px;
+}
+
+.carousel-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.carousel-viewport {
+    flex: 1;
+    overflow: hidden;
+    border: 1px solid #eaeaea;
+    border-radius: 8px;
+    background: #fafafa;
+}
+
+.carousel-track {
+    display: flex;
+    transition: transform 0.3s ease;
+}
+
+/* Карточки */
+.card {
+    min-width: 100%;
+    opacity: 0;
+    transition: opacity 0.3s;
+    display: none;
+}
+
+.card.active {
+    opacity: 1;
+    display: block;
+}
+
+.card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eaeaea;
+    background: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    background: #f0f0f0;
+    color: #666;
+    border-radius: 12px;
+    text-transform: lowercase;
+}
+
+.card-content {
+    padding: 20px;
+}
+
+/* Стрелки карусели */
+.carousel-arrow {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.carousel-arrow:hover {
+    background: #f5f5f5;
+    border-color: #ccc;
+}
+
+/* Точки */
+.carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ccc;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.dot.active {
+    background: #666;
+    width: 16px;
+    border-radius: 3px;
+}
+
+/* Меню */
+.menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.menu-item {
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.menu-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.item-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+}
+
+.item-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.item-price {
+    color: #333;
+    font-weight: 500;
+}
+
+.item-allergen {
+    font-size: 12px;
+    color: #b85c00;
+}
+
+.item-allergen.safe {
+    color: #00a86b;
+}
+
+/* Детали блюда */
+.dish-image {
+    margin-bottom: 16px;
+}
+
+.image-placeholder {
+    background: #f0f0f0;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 14px;
+    border-radius: 4px;
+}
+
+.ai-analysis {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #fff5f5;
+    border: 1px solid #ffcdd2;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.ai-analysis.danger {
+    background: #fff5f5;
+    border-color: #ffcdd2;
+}
+
+.ai-title {
+    color: #b71c1c;
+    margin-bottom: 8px;
+}
+
+.allergen-block {
+    background: white;
+    padding: 8px 12px;
+    border: 1px solid #ffcdd2;
+    border-radius: 4px;
+    color: #b71c1c;
+    font-weight: 500;
+}
+
+.ingredients {
+    margin-bottom: 16px;
+}
+
+.ingredients-title {
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.ingredients-list {
+    list-style: none;
+}
+
+.ingredients-list li {
+    padding: 4px 0;
+    color: #666;
+    border-bottom: 1px dashed #eee;
+}
+
+.ingredients-list li.allergen-item {
+    color: #b71c1c;
+}
+
+.dish-footer {
+    border-top: 1px solid #eee;
+    padding-top: 16px;
+}
+
+.dish-meta {
+    font-size: 13px;
+    color: #999;
+    margin-bottom: 12px;
+}
+
+.dish-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.price {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.quantity-btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #666;
+}
+
+.quantity-btn:hover {
+    background: #f5f5f5;
+}
+
+.quantity {
+    min-width: 20px;
+    text-align: center;
+    color: #333;
+}
+
+.add-btn {
+    padding: 6px 12px;
+    background: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.add-btn:hover {
+    background: #444;
+}
+
+/* Профиль */
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.avatar {
+    width: 48px;
+    height: 48px;
+    background: #f0f0f0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-weight: 500;
+}
+
+.profile-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.profile-email {
+    font-size: 13px;
+    color: #999;
+}
+
+.profile-section {
+    margin-bottom: 20px;
+}
+
+.section-title {
+    font-weight: 500;
+    margin-bottom: 12px;
+    color: #333;
+    font-size: 14px;
+}
+
+.options-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #666;
+    cursor: pointer;
+}
+
+.option input {
+    cursor: pointer;
+}
+
+.save-btn {
+    width: 100%;
+    padding: 10px;
+    background: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.save-btn:hover {
+    background: #444;
+}
+
+/* Сценарии */
+.scenarios {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.scenario {
+    background: #fafafa;
+    padding: 16px;
+    border-radius: 6px;
+}
+
+.scenario-user {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+    color: #333;
+}
+
+.scenario-steps {
+    padding-left: 20px;
+    color: #666;
+    font-size: 14px;
+}
+
+.scenario-steps li {
+    margin: 4px 0;
+}
+
+/* API секция */
+.api-section h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 16px;
+}
+
+.api-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.api-btn {
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #666;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.api-btn:hover {
+    background: #f5f5f5;
+    border-color: #ccc;
+}
+
+.method {
+    font-size: 11px;
+    padding: 2px 6px;
+    background: #e0e0e0;
+    color: #666;
+    border-radius: 3px;
+}
+
+.api-response {
+    background: #1e1e1e;
+    border-radius: 6px;
+    padding: 16px;
+}
+
+.api-response pre {
+    color: #d4d4d4;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Подвал */
+.footer {
+    text-align: center;
+    color: #999;
+    font-size: 13px;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+}
+
+.cursor {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .main {
+        padding: 20px;
+    }
+    
+    .lab-header h1 {
+        font-size: 20px;
+    }
+    
+    .dish-actions {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .api-controls {
+        flex-direction: column;
+    }
+    
+    .carousel-arrow {
+        width: 28px;
+        height: 28px;
+    }
+}
