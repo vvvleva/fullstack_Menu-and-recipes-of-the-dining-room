@@ -73,23 +73,6 @@ function ProfilePage() {
   );
 }
 
-function AboutPage() {
-  return (
-    <section>
-      <h3>Структура проекта и чек‑поинты</h3>
-      <p className="spa-text">
-        Текущая версия покрывает ЛР №1–3. Далее планируется добавить CRUD для блюд, авторизацию и JWT‑защиту API.
-      </p>
-      <ol className="spa-list spa-list-ordered">
-        <li>ЛР №4 — CRUD для меню: создание, изменение и удаление блюд.</li>
-        <li>ЛР №5 — клиентская авторизация, работа с токенами.</li>
-        <li>ЛР №6 — защита API: JWT, middleware, роли.</li>
-        <li>ЛР №7 — полноценная интеграция: загрузка меню, анализ аллергенов на фронтенде.</li>
-      </ol>
-    </section>
-  );
-}
-
 function App() {
   return (
     <ReactRouterDOM.BrowserRouter>

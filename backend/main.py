@@ -85,7 +85,7 @@ def run_frontend_server():
     print(f"Запуск фронтенд сервера в {FRONTEND_DIR}")
     
     if sys.platform == "win32":
-        # Для Windows используем Python HTTP сервер
+        # используем Python HTTP сервер
         subprocess.run([sys.executable, "-m", "http.server", "3000"])
     else:
         subprocess.run([sys.executable, "-m", "http.server", "3000"])
