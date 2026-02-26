@@ -22,12 +22,8 @@
         </header>
 
         <main class="main">
-            <div class="lab-header">
-                <h1>Лабораторная работа №1-2</h1>
-                <p>Проектирование UI/UX + Развёртывание сервера</p>
-            </div>
 
-            <!-- Карусель с карточками -->
+            <!-- Карусель с карточками (ЛР №1) -->
             <div class="carousel-section">
                 <div class="section-header">
                     <h2>Ключевые экраны</h2>
@@ -233,7 +229,16 @@
                 </div>
             </div>
 
-            <!-- API тестер -->
+            <!-- SPA для ЛР №3 -->
+            <section class="spa-section">
+                <div class="section-header">
+                    <h2>SPA на React (ЛР №3)</h2>
+                    <p class="section-subtitle">Клиентская маршрутизация с React Router</p>
+                </div>
+                <div id="spa-root"></div>
+            </section>
+
+            <!-- API тестер (ЛР №2) -->
             <div class="api-section">
                 <h2>Тестирование API</h2>
                 
@@ -266,6 +271,11 @@
         </footer>
     </div>
 
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-router-dom@6/umd/react-router-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="text/babel" src="app.jsx"></script>
     <script src="script.js"></script>
 </body>
 </html>

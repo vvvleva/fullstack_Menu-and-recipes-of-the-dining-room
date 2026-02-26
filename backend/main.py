@@ -12,6 +12,8 @@ import time
 import webbrowser
 from pathlib import Path
 
+from routes.menu import router as menu_router
+
 # Создаем приложение
 app = FastAPI(
     title="Столовая #2049 API",
@@ -19,7 +21,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Настройка CORS
+# Настройка CORS - позволяет фронтенду с других доменов обращаться к API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -33,7 +35,7 @@ BACKEND_DIR = Path(__file__).parent
 PROJECT_DIR = BACKEND_DIR.parent
 FRONTEND_DIR = PROJECT_DIR / "frontend"
 
-# Монтируем статические файлы фронтенда (если папка существует)
+# Монтируем статические файлы фронтенда 
 if FRONTEND_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
     
@@ -46,53 +48,9 @@ if FRONTEND_DIR.exists():
             return FileResponse(str(index_path))
         return {"error": "Frontend files not found"}
 
-# База данных в памяти
-menu_items = [
-    {
-        "id": 1,
-        "name": "Цезарь с курицей",
-        "price": 350,
-        "weight": 250,
-        "category": "салаты",
-        "ingredients": ["курица", "салат айсберг", "соус", "пармезан", "грецкий орех", "гренки"],
-        "allergens": ["орехи", "глютен", "лактоза"],
-        "calories": 420,
-        "available": True
-    },
-    {
-        "id": 2,
-        "name": "Греческий салат",
-        "price": 300,
-        "weight": 200,
-        "category": "салаты",
-        "ingredients": ["помидоры", "огурцы", "фета", "оливки", "оливковое масло"],
-        "allergens": ["лактоза"],
-        "calories": 250,
-        "available": True
-    },
-    {
-        "id": 3,
-        "name": "Борщ",
-        "price": 280,
-        "weight": 300,
-        "category": "супы",
-        "ingredients": ["свекла", "капуста", "картофель", "говядина", "сметана"],
-        "allergens": ["лактоза"],
-        "calories": 180,
-        "available": True
-    },
-    {
-        "id": 4,
-        "name": "Котлеты с пюре",
-        "price": 380,
-        "weight": 350,
-        "category": "горячее",
-        "ingredients": ["котлеты", "картофельное пюре", "соус"],
-        "allergens": ["глютен", "лактоза"],
-        "calories": 550,
-        "available": True
-    }
-]
+# Подключаем маршруты меню и AI‑анализа (ЛР №2, подготовка к ЛР №4–7)
+app.include_router(menu_router)
+
 
 # Корневой эндпоинт
 @app.get("/")
@@ -116,88 +74,6 @@ async def health_check():
         "timestamp": datetime.now().isoformat(),
         "server": "Столовая #2049 API"
     }
-
-# Получение всего меню
-@app.get("/api/menu")
-async def get_menu():
-    return {
-        "status": "success",
-        "data": menu_items,
-        "count": len(menu_items)
-    }
-
-# Получение конкретного блюда
-@app.get("/api/menu/{item_id}")
-async def get_menu_item(item_id: int):
-    for item in menu_items:
-        if item["id"] == item_id:
-            return {
-                "status": "success",
-                "data": item
-            }
-    return {
-        "status": "error",
-        "message": "Блюдо не найдено"
-    }
-
-# Получение блюд по категории
-@app.get("/api/menu/category/{category}")
-async def get_menu_by_category(category: str):
-    filtered = [item for item in menu_items if item["category"] == category and item["available"]]
-    return {
-        "status": "success",
-        "category": category,
-        "data": filtered,
-        "count": len(filtered)
-    }
-
-# AI-анализ аллергенов
-@app.get("/api/analyze/{item_id}/{user_allergens}")
-async def analyze_allergens(item_id: int, user_allergens: str):
-    dish = None
-    for item in menu_items:
-        if item["id"] == item_id:
-            dish = item
-            break
-    
-    if not dish:
-        return {
-            "status": "error",
-            "message": "Блюдо не найдено"
-        }
-    
-    user_allergens_list = [a.strip() for a in user_allergens.split(",")]
-    
-    found_allergens = []
-    for allergen in user_allergens_list:
-        if allergen in dish["allergens"]:
-            found_allergens.append(allergen)
-    
-    if "орехи" in found_allergens or "морепродукты" in found_allergens:
-        safety_level = "danger"
-    elif found_allergens:
-        safety_level = "warning"
-    else:
-        safety_level = "safe"
-    
-    return {
-        "status": "success",
-        "dish_name": dish["name"],
-        "analysis": {
-            "has_allergens": len(found_allergens) > 0,
-            "allergens_found": found_allergens,
-            "safety_level": safety_level,
-            "message": get_safety_message(safety_level, found_allergens)
-        }
-    }
-
-def get_safety_message(level: str, allergens: list):
-    if level == "danger":
-        return f"ОПАСНО! Блюдо содержит {', '.join(allergens)}. НЕ РЕКОМЕНДУЕТСЯ к употреблению!"
-    elif level == "warning":
-        return f"ВНИМАНИЕ! Блюдо содержит {', '.join(allergens)}. Будьте осторожны!"
-    else:
-        return "Безопасно! Аллергены не найдены."
 
 def run_frontend_server():
     """Запуск простого HTTP сервера для фронтенда"""
