@@ -88,6 +88,76 @@ async function testAI() {
     }
 }
 
+// CRUD (ЛР №4)
+async function testCreate() {
+    const responseEl = document.getElementById('apiResponse');
+    responseEl.innerHTML = '<pre>POST /api/menu — создание блюда...</pre>';
+    
+    const body = {
+        name: "Тыквенный суп",
+        price: 320,
+        weight: 300,
+        category: "супы",
+        ingredients: ["тыква", "сливки", "лук", "чеснок"],
+        allergens: ["лактоза"],
+        calories: 150,
+        available: true
+    };
+    
+    try {
+        const response = await fetch(`${API_URL}/api/menu`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+        const data = await response.json();
+        responseEl.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    } catch (error) {
+        responseEl.innerHTML = `<pre>Ошибка: ${error.message}</pre>`;
+    }
+}
+
+async function testUpdate() {
+    const responseEl = document.getElementById('apiResponse');
+    responseEl.innerHTML = '<pre>PUT /api/menu/1 — обновление блюда...</pre>';
+    
+    const body = {
+        name: "Цезарь с курицей (обновлённый)",
+        price: 380,
+        weight: 280,
+        category: "салаты",
+        ingredients: ["курица", "салат айсберг", "соус", "пармезан", "грецкий орех", "гренки"],
+        allergens: ["орехи", "глютен", "лактоза"],
+        calories: 450,
+        available: true
+    };
+    
+    try {
+        const response = await fetch(`${API_URL}/api/menu/1`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+        const data = await response.json();
+        responseEl.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    } catch (error) {
+        responseEl.innerHTML = `<pre>Ошибка: ${error.message}</pre>`;
+    }
+}
+
+async function testDelete() {
+    const responseEl = document.getElementById('apiResponse');
+    responseEl.innerHTML = '<pre>DELETE /api/menu/5 — удаление блюда (создайте сначала через POST)...</pre>';
+    
+    try {
+        const response = await fetch(`${API_URL}/api/menu/5`, { method: "DELETE" });
+        const data = await response.json();
+        responseEl.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    } catch (error) {
+        responseEl.innerHTML = `<pre>Ошибка: ${error.message}</pre>`;
+    }
+}
+
 // Клавиши для карусели
 document.addEventListener('keydown', function(e) {
     if (e.key === 'ArrowLeft') {

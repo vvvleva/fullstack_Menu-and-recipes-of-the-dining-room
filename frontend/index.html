@@ -238,7 +238,7 @@
                 <div id="spa-root"></div>
             </section>
 
-            <!-- API тестер  -->
+            <!-- API тестер (ЛР №2, ЛР №4 CRUD) -->
             <div class="api-section">
                 <h2>Тестирование API</h2>
                 
@@ -249,11 +249,20 @@
                     <button class="api-btn" onclick="testAPI('health')">
                         <span class="method">GET</span> /health
                     </button>
-                    <button class="api-btn" onclick="testAPI('category/салаты')">
+                    <button class="api-btn" onclick="testAPI('menu/category/салаты')">
                         <span class="method">GET</span> /api/menu/category/салаты
                     </button>
                     <button class="api-btn" onclick="testAI()">
                         <span class="method">AI</span> Анализ аллергенов
+                    </button>
+                    <button class="api-btn" onclick="testCreate()">
+                        <span class="method">POST</span> Создать блюдо
+                    </button>
+                    <button class="api-btn" onclick="testUpdate()">
+                        <span class="method">PUT</span> Обновить блюдо
+                    </button>
+                    <button class="api-btn" onclick="testDelete()">
+                        <span class="method">DELETE</span> Удалить блюдо
                     </button>
                 </div>
                 
