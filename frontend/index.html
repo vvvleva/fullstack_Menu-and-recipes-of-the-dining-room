@@ -43,35 +43,8 @@
                                     <span class="badge">основной</span>
                                 </div>
                                 <div class="card-content">
-                                    <div class="menu-list">
-                                        <div class="menu-item">
-                                            <div class="item-row">
-                                                <span class="item-name">Цезарь с курицей</span>
-                                                <span class="item-price">350 ₽</span>
-                                            </div>
-                                            <div class="item-allergen warning">Содержит орехи</div>
-                                        </div>
-                                        <div class="menu-item">
-                                            <div class="item-row">
-                                                <span class="item-name">Греческий салат</span>
-                                                <span class="item-price">300 ₽</span>
-                                            </div>
-                                            <div class="item-allergen safe">Безопасно</div>
-                                        </div>
-                                        <div class="menu-item">
-                                            <div class="item-row">
-                                                <span class="item-name">Борщ</span>
-                                                <span class="item-price">280 ₽</span>
-                                            </div>
-                                            <div class="item-allergen warning">Содержит лактозу</div>
-                                        </div>
-                                        <div class="menu-item">
-                                            <div class="item-row">
-                                                <span class="item-name">Котлеты с пюре</span>
-                                                <span class="item-price">380 ₽</span>
-                                            </div>
-                                            <div class="item-allergen warning">Содержит глютен</div>
-                                        </div>
+                                    <div id="menuList" class="menu-list">
+                                        <!-- Список блюд подгружается из /api/menu -->
                                     </div>
                                 </div>
                             </div>
@@ -79,7 +52,7 @@
                             <!-- Слайд 2: Детали блюда -->
                             <div class="card">
                                 <div class="card-header">
-                                    <h3>Цезарь с курицей</h3>
+                                    <h3 id="dishTitle">Выберите блюдо</h3>
                                     <span class="badge">детали</span>
                                 </div>
                                 <div class="card-content">
@@ -88,27 +61,22 @@
                                             <div class="image-placeholder">ФОТО</div>
                                         </div>
                                         
-                                        <div class="ai-analysis danger">
-                                            <div class="ai-title">AI-анализ: найден аллерген</div>
-                                            <div class="allergen-block">Грецкий орех (в соусе)</div>
+                                        <div id="aiBlock" class="ai-analysis">
+                                            <div id="aiTitle" class="ai-title">Анализ аллергенов</div>
+                                            <div id="aiMessage" class="allergen-block">Выберите блюдо и настройте профиль аллергий.</div>
                                         </div>
                                         
                                         <div class="ingredients">
                                             <div class="ingredients-title">Состав</div>
-                                            <ul class="ingredients-list">
-                                                <li>Курица</li>
-                                                <li>Салат айсберг</li>
-                                                <li>Соус</li>
-                                                <li class="allergen-item">Грецкий орех</li>
-                                                <li>Пармезан</li>
-                                                <li class="allergen-item">Гренки (глютен)</li>
+                                            <ul id="ingredientsList" class="ingredients-list">
+                                                <!-- Состав блюда подгружается из /api/menu/{id} -->
                                             </ul>
                                         </div>
                                         
                                         <div class="dish-footer">
-                                            <div class="dish-meta">250 г · 420 ккал</div>
+                                            <div id="dishMeta" class="dish-meta">—</div>
                                             <div class="dish-actions">
-                                                <span class="price">350 ₽</span>
+                                                <span id="dishPrice" class="price">—</span>
                                                 <div class="quantity-controls">
                                                     <button class="quantity-btn">−</button>
                                                     <span class="quantity">1</span>

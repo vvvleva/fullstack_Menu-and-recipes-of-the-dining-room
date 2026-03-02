@@ -7,6 +7,7 @@ const API_URL = 'http://localhost:8000';
 document.addEventListener('DOMContentLoaded', function() {
     checkServerStatus();
     setInterval(checkServerStatus, 5000);
+    loadMenuFromApi();
 });
 
 function showSlide(index) {
@@ -71,6 +72,116 @@ async function testAPI(endpoint) {
         responseEl.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
     } catch (error) {
         responseEl.innerHTML = `<pre>Ошибка: ${error.message}</pre>`;
+    }
+}
+
+// --- Динамическое меню и состав блюда ---
+
+async function loadMenuFromApi() {
+    const listEl = document.getElementById('menuList');
+    if (!listEl) return;
+
+    listEl.innerHTML = '<div class="menu-item"><div class="item-row"><span class="item-name">Загрузка меню...</span></div></div>';
+
+    try {
+        const response = await fetch(`${API_URL}/api/menu`);
+        if (!response.ok) {
+            throw new Error(`Ошибка загрузки меню: ${response.status}`);
+        }
+        const payload = await response.json();
+        const items = payload.data || [];
+
+        if (!items.length) {
+            listEl.innerHTML = '<div class="menu-item"><div class="item-row"><span class="item-name">Меню пусто</span></div></div>';
+            return;
+        }
+
+        listEl.innerHTML = '';
+        items.forEach((item) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'menu-item';
+            wrapper.onclick = () => selectDish(item.id);
+
+            const row = document.createElement('div');
+            row.className = 'item-row';
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'item-name';
+            nameSpan.textContent = item.name;
+
+            const priceSpan = document.createElement('span');
+            priceSpan.className = 'item-price';
+            priceSpan.textContent = `${item.price} ₽`;
+
+            row.appendChild(nameSpan);
+            row.appendChild(priceSpan);
+
+            const allergenDiv = document.createElement('div');
+            const hasAllergens = Array.isArray(item.allergens) && item.allergens.length > 0;
+            allergenDiv.className = 'item-allergen ' + (hasAllergens ? 'warning' : 'safe');
+            allergenDiv.textContent = hasAllergens ? 'Содержит потенциальные аллергены' : 'Безопасно';
+
+            wrapper.appendChild(row);
+            wrapper.appendChild(allergenDiv);
+
+            listEl.appendChild(wrapper);
+        });
+    } catch (error) {
+        listEl.innerHTML = `<div class="menu-item"><div class="item-row"><span class="item-name">Ошибка: ${error.message}</span></div></div>`;
+    }
+}
+
+async function selectDish(id) {
+    try {
+        const response = await fetch(`${API_URL}/api/menu/${id}`);
+        if (!response.ok) {
+            throw new Error(`Ошибка загрузки блюда: ${response.status}`);
+        }
+        const payload = await response.json();
+        const dish = payload.data;
+        if (!dish) return;
+
+        renderDishDetails(dish);
+        goToSlide(1);
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+function renderDishDetails(dish) {
+    const titleEl = document.getElementById('dishTitle');
+    const ingredientsEl = document.getElementById('ingredientsList');
+    const metaEl = document.getElementById('dishMeta');
+    const priceEl = document.getElementById('dishPrice');
+
+    if (titleEl) titleEl.textContent = dish.name;
+    if (priceEl) priceEl.textContent = `${dish.price} ₽`;
+    if (metaEl) metaEl.textContent = `${dish.weight} г · ${dish.calories} ккал`;
+
+    if (ingredientsEl) {
+        ingredientsEl.innerHTML = '';
+        const ingredients = Array.isArray(dish.ingredients) ? dish.ingredients : [];
+        const allergens = new Set(Array.isArray(dish.allergens) ? dish.allergens : []);
+
+        if (!ingredients.length) {
+            const li = document.createElement('li');
+            li.textContent = 'Состав не указан';
+            ingredientsEl.appendChild(li);
+        } else {
+            ingredients.forEach((ing) => {
+                const li = document.createElement('li');
+                li.textContent = ing;
+                const lower = (ing || '').toLowerCase();
+                const isAllergen =
+                    ['орех', 'орехи', 'глютен', 'лактоза', 'сметана', 'сыр', 'молоко'].some((token) =>
+                        lower.includes(token)
+                    ) || Array.from(allergens).some((a) => lower.includes(a));
+                if (isAllergen) {
+                    li.classList.add('allergen-item');
+                }
+                ingredientsEl.appendChild(li);
+            });
+        }
     }
 }
 
