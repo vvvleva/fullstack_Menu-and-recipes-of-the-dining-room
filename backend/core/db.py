@@ -1,9 +1,9 @@
-"""SQLite-хранилище для меню и состава блюд."""
+"""SQLite-хранилище для меню, состава блюд и пользователей."""
 
 from __future__ import annotations
 
 import sqlite3
-from typing import Any, Iterable
+from typing import Any, Iterable, Optional
 
 from config import DATA_DIR, DB_PATH
 
@@ -54,6 +54,15 @@ def init_db() -> None:
               PRIMARY KEY (dish_id, allergen_id),
               FOREIGN KEY (dish_id) REFERENCES dishes(id) ON DELETE CASCADE,
               FOREIGN KEY (allergen_id) REFERENCES allergens(id) ON DELETE RESTRICT
+            );
+
+            CREATE TABLE IF NOT EXISTS users (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              email TEXT NOT NULL UNIQUE,
+              password_hash TEXT NOT NULL,
+              full_name TEXT,
+              allergens_json TEXT DEFAULT '[]',
+              diet TEXT
             );
             """
         )
@@ -350,4 +359,55 @@ def _seed(conn: sqlite3.Connection) -> None:
             target_col="allergen_id",
             names=item.get("allergens"),
         )
+
+
+# --- Пользователи ---
+
+def get_user_by_email(email: str) -> Optional[dict[str, Any]]:
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT id, email, password_hash, full_name, allergens_json, diet FROM users WHERE email = ?",
+            (email.lower(),),
+        ).fetchone()
+        if not row:
+            return None
+        return {
+            "id": int(row["id"]),
+            "email": row["email"],
+            "password_hash": row["password_hash"],
+            "full_name": row["full_name"],
+            "allergens_json": row["allergens_json"],
+            "diet": row["diet"],
+        }
+
+
+def create_user_record(
+    *,
+    email: str,
+    password_hash: str,
+    full_name: Optional[str],
+    allergens_json: str,
+    diet: Optional[str],
+) -> dict[str, Any]:
+    with get_connection() as conn:
+        cur = conn.execute(
+            """
+            INSERT INTO users(email, password_hash, full_name, allergens_json, diet)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (email.lower(), password_hash, full_name, allergens_json, diet),
+        )
+        user_id = int(cur.lastrowid)
+        row = conn.execute(
+            "SELECT id, email, password_hash, full_name, allergens_json, diet FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+        return {
+            "id": int(row["id"]),
+            "email": row["email"],
+            "password_hash": row["password_hash"],
+            "full_name": row["full_name"],
+            "allergens_json": row["allergens_json"],
+            "diet": row["diet"],
+        }
 

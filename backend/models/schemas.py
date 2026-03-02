@@ -1,8 +1,10 @@
-"""Pydantic-схемы для валидации сущности «Блюдо» (ЛР №4)."""
+"""Pydantic-схемы: блюда и пользователи (авторизация)."""
 from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
+
+# --- Блюда ---
 
 # Допустимые категории блюд
 ALLOWED_CATEGORIES = {"салаты", "супы", "горячее", "гарниры", "напитки", "десерты"}
@@ -10,6 +12,7 @@ ALLOWED_CATEGORIES = {"салаты", "супы", "горячее", "гарни�
 
 class MenuItemBase(BaseModel):
     """Базовая схема блюда."""
+
     name: str = Field(..., min_length=1, max_length=200, description="Название блюда")
     price: int = Field(..., ge=1, le=100_000, description="Цена в рублях")
     weight: int = Field(..., ge=1, le=5000, description="Вес в граммах")
@@ -40,11 +43,13 @@ class MenuItemBase(BaseModel):
 
 class MenuItemCreate(MenuItemBase):
     """Схема для создания блюда (POST)."""
+
     pass
 
 
 class MenuItemUpdate(BaseModel):
     """Схема для обновления блюда (PUT) — все поля опциональны для частичного обновления."""
+
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     price: Optional[int] = Field(None, ge=1, le=100_000)
     weight: Optional[int] = Field(None, ge=1, le=5000)
@@ -79,6 +84,7 @@ class MenuItemUpdate(BaseModel):
 
 class MenuItemResponse(BaseModel):
     """Схема ответа с блюдом."""
+
     id: int
     name: str
     price: int
@@ -88,3 +94,38 @@ class MenuItemResponse(BaseModel):
     allergens: list[str]
     calories: int
     available: bool
+
+
+# --- Пользователи и авторизация ---
+
+
+class UserBase(BaseModel):
+    email: EmailStr = Field(..., description="Email пользователя (логин)")
+    full_name: Optional[str] = Field(None, max_length=200, description="Полное имя")
+
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=6, max_length=100, description="Пароль")
+    allergens: list[str] = Field(default_factory=list, description="Аллергены пользователя")
+    diet: Optional[str] = Field(None, max_length=100, description="Тип диеты")
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class UserPublic(UserBase):
+    id: int
+    allergens: list[str] = Field(default_factory=list)
+    diet: Optional[str] = None
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class TokenPayload(BaseModel):
+    sub: str
+    exp: int

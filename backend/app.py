@@ -12,6 +12,7 @@ from core.exceptions import (
     validation_exception_handler,
 )
 from routes.menu import router as menu_router
+from routes.auth import router as auth_router
 from routes.root import router as root_router
 from routes.frontend import router as frontend_router
 
@@ -37,6 +38,7 @@ def create_app() -> FastAPI:
 
     app.include_router(root_router)
     app.include_router(menu_router)
+    app.include_router(auth_router)
     app.include_router(frontend_router)
 
     @app.on_event("startup")
