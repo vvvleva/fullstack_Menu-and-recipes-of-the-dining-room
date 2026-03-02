@@ -1,73 +1,14 @@
 """Маршруты меню и AI-анализа. CRUD для блюд (ЛР №4)."""
 from fastapi import APIRouter, HTTPException
 
+from core.db import create_dish, delete_dish, get_dish, list_dishes, update_dish
 from models.schemas import MenuItemBase, MenuItemUpdate
 
 router = APIRouter(prefix="/api", tags=["menu"])
 
 
-# База данных в памяти (будет заменена на БД в следующих ЛР)
-menu_items: list[dict] = [
-    {
-        "id": 1,
-        "name": "Цезарь с курицей",
-        "price": 350,
-        "weight": 250,
-        "category": "салаты",
-        "ingredients": ["курица", "салат айсберг", "соус", "пармезан", "грецкий орех", "гренки"],
-        "allergens": ["орехи", "глютен", "лактоза"],
-        "calories": 420,
-        "available": True,
-    },
-    {
-        "id": 2,
-        "name": "Греческий салат",
-        "price": 300,
-        "weight": 200,
-        "category": "салаты",
-        "ingredients": ["помидоры", "огурцы", "фета", "оливки", "оливковое масло"],
-        "allergens": ["лактоза"],
-        "calories": 250,
-        "available": True,
-    },
-    {
-        "id": 3,
-        "name": "Борщ",
-        "price": 280,
-        "weight": 300,
-        "category": "супы",
-        "ingredients": ["свекла", "капуста", "картофель", "говядина", "сметана"],
-        "allergens": ["лактоза"],
-        "calories": 180,
-        "available": True,
-    },
-    {
-        "id": 4,
-        "name": "Котлеты с пюре",
-        "price": 380,
-        "weight": 350,
-        "category": "горячее",
-        "ingredients": ["котлеты", "картофельное пюре", "соус"],
-        "allergens": ["глютен", "лактоза"],
-        "calories": 550,
-        "available": True,
-    },
-]
-
-
-def _next_id() -> int:
-    """Генерация следующего ID."""
-    if not menu_items:
-        return 1
-    return max(item["id"] for item in menu_items) + 1
-
-
-def _find_index(item_id: int) -> int:
-    """Индекс блюда по ID. Вызывает HTTPException 404, если не найдено."""
-    for i, item in enumerate(menu_items):
-        if item["id"] == item_id:
-            return i
-    raise HTTPException(
+def _not_found(item_id: int) -> HTTPException:
+    return HTTPException(
         status_code=404,
         detail={
             "code": "NOT_FOUND",
@@ -82,17 +23,18 @@ def _find_index(item_id: int) -> int:
 @router.get("/menu")
 async def get_menu():
     """Получить всё меню."""
+    items = list_dishes()
     return {
         "status": "success",
-        "data": menu_items,
-        "count": len(menu_items),
+        "data": items,
+        "count": len(items),
     }
 
 
 @router.get("/menu/category/{category}")
 async def get_menu_by_category(category: str):
     """Получить блюда по категории. Маршрут должен быть выше /menu/{item_id}."""
-    filtered = [item for item in menu_items if item["category"] == category and item["available"]]
+    filtered = list_dishes(category=category, only_available=True)
     return {
         "status": "success",
         "category": category,
@@ -104,10 +46,12 @@ async def get_menu_by_category(category: str):
 @router.get("/menu/{item_id}")
 async def get_menu_item(item_id: int):
     """Получить блюдо по ID."""
-    idx = _find_index(item_id)
+    dish = get_dish(item_id)
+    if not dish:
+        raise _not_found(item_id)
     return {
         "status": "success",
-        "data": menu_items[idx],
+        "data": dish,
     }
 
 
@@ -116,19 +60,7 @@ async def get_menu_item(item_id: int):
 @router.post("/menu", status_code=201)
 async def create_menu_item(payload: MenuItemBase):
     """Создать новое блюдо. Валидация через Pydantic."""
-    new_id = _next_id()
-    new_item = {
-        "id": new_id,
-        "name": payload.name,
-        "price": payload.price,
-        "weight": payload.weight,
-        "category": payload.category,
-        "ingredients": payload.ingredients,
-        "allergens": payload.allergens,
-        "calories": payload.calories,
-        "available": payload.available,
-    }
-    menu_items.append(new_item)
+    new_item = create_dish(payload.model_dump())
     return {
         "status": "success",
         "message": "Блюдо создано",
@@ -141,19 +73,9 @@ async def create_menu_item(payload: MenuItemBase):
 @router.put("/menu/{item_id}")
 async def update_menu_item(item_id: int, payload: MenuItemBase):
     """Полное обновление блюда (PUT)."""
-    idx = _find_index(item_id)
-    updated = {
-        "id": item_id,
-        "name": payload.name,
-        "price": payload.price,
-        "weight": payload.weight,
-        "category": payload.category,
-        "ingredients": payload.ingredients,
-        "allergens": payload.allergens,
-        "calories": payload.calories,
-        "available": payload.available,
-    }
-    menu_items[idx] = updated
+    updated = update_dish(item_id, payload.model_dump())
+    if not updated:
+        raise _not_found(item_id)
     return {
         "status": "success",
         "message": "Блюдо обновлено",
@@ -164,8 +86,9 @@ async def update_menu_item(item_id: int, payload: MenuItemBase):
 @router.patch("/menu/{item_id}")
 async def patch_menu_item(item_id: int, payload: MenuItemUpdate):
     """Частичное обновление блюда (PATCH)."""
-    idx = _find_index(item_id)
-    item = menu_items[idx]
+    item = get_dish(item_id)
+    if not item:
+        raise _not_found(item_id)
     update_data = payload.model_dump(exclude_unset=True)
     if not update_data:
         raise HTTPException(
@@ -175,12 +98,26 @@ async def patch_menu_item(item_id: int, payload: MenuItemUpdate):
                 "message": "Не указано ни одного поля для обновления",
             },
         )
-    for key, value in update_data.items():
-        item[key] = value
+
+    merged = {**item, **update_data}
+    merged_payload = MenuItemBase(
+        name=merged["name"],
+        price=merged["price"],
+        weight=merged["weight"],
+        category=merged["category"],
+        ingredients=merged.get("ingredients") or [],
+        allergens=merged.get("allergens") or [],
+        calories=merged["calories"],
+        available=merged.get("available", True),
+    )
+
+    updated = update_dish(item_id, merged_payload.model_dump())
+    if not updated:
+        raise _not_found(item_id)
     return {
         "status": "success",
         "message": "Блюдо обновлено",
-        "data": item,
+        "data": updated,
     }
 
 
@@ -189,8 +126,9 @@ async def patch_menu_item(item_id: int, payload: MenuItemUpdate):
 @router.delete("/menu/{item_id}", status_code=200)
 async def delete_menu_item(item_id: int):
     """Удалить блюдо."""
-    idx = _find_index(item_id)
-    removed = menu_items.pop(idx)
+    removed = delete_dish(item_id)
+    if not removed:
+        raise _not_found(item_id)
     return {
         "status": "success",
         "message": "Блюдо удалено",
@@ -203,8 +141,9 @@ async def delete_menu_item(item_id: int):
 @router.get("/analyze/{item_id}/{user_allergens}")
 async def analyze_allergens(item_id: int, user_allergens: str):
     """AI-анализ аллергенов для блюда."""
-    idx = _find_index(item_id)
-    dish = menu_items[idx]
+    dish = get_dish(item_id)
+    if not dish:
+        raise _not_found(item_id)
 
     user_allergens_list = [a.strip() for a in user_allergens.split(",") if a.strip()]
 

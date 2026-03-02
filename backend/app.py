@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from config import FRONTEND_DIR
+from core.db import init_db
 from core.exceptions import (
     generic_exception_handler,
     http_exception_handler,
@@ -37,6 +38,10 @@ def create_app() -> FastAPI:
     app.include_router(root_router)
     app.include_router(menu_router)
     app.include_router(frontend_router)
+
+    @app.on_event("startup")
+    def _startup() -> None:
+        init_db()
 
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
