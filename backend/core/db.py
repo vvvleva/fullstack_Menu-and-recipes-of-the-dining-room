@@ -17,7 +17,9 @@ def get_connection() -> sqlite3.Connection:
 
 
 def init_db() -> None:
+    """Инициализация базы данных при старте приложения."""
     with get_connection() as conn:
+        # Создаем основные таблицы
         conn.executescript(
             """
             CREATE TABLE IF NOT EXISTS dishes (
@@ -66,7 +68,56 @@ def init_db() -> None:
             );
             """
         )
+        
+        # Добавляем новые поля в users (с проверкой существования)
+        try:
+            conn.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'")
+        except sqlite3.OperationalError:
+            pass  # Поле уже существует
+        
+        try:
+            conn.execute("ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1")
+        except sqlite3.OperationalError:
+            pass  # Поле уже существует
+        
+        # Создаем таблицы заказов
+        conn.executescript(
+            """
+            CREATE TABLE IF NOT EXISTS orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                user_email TEXT NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                status TEXT NOT NULL DEFAULT 'pending',
+                total_price INTEGER NOT NULL,
+                delivery_time TIMESTAMP,
+                comments TEXT,
+                estimated_ready_time TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+            
+            CREATE TABLE IF NOT EXISTS order_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                order_id INTEGER NOT NULL,
+                dish_id INTEGER NOT NULL,
+                dish_name TEXT NOT NULL,
+                dish_price INTEGER NOT NULL,
+                quantity INTEGER NOT NULL,
+                special_requests TEXT,
+                subtotal INTEGER NOT NULL,
+                FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+                FOREIGN KEY (dish_id) REFERENCES dishes(id) ON DELETE RESTRICT
+            );
+            
+            CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
+            CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+            CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at);
+            CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+            CREATE INDEX IF NOT EXISTS idx_order_items_dish_id ON order_items(dish_id);
+            """
+        )
 
+        # Заполняем тестовыми данными если таблица пуста
         count = conn.execute("SELECT COUNT(*) AS c FROM dishes").fetchone()["c"]
         if count == 0:
             _seed(conn)
@@ -284,6 +335,7 @@ def delete_dish(dish_id: int) -> dict[str, Any] | None:
 
 
 def _seed(conn: sqlite3.Connection) -> None:
+    """Заполнение базы тестовыми данными."""
     seed_items: list[dict[str, Any]] = [
         {
             "name": "Цезарь с курицей",
@@ -366,7 +418,7 @@ def _seed(conn: sqlite3.Connection) -> None:
 def get_user_by_email(email: str) -> Optional[dict[str, Any]]:
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT id, email, password_hash, full_name, allergens_json, diet FROM users WHERE email = ?",
+            "SELECT id, email, password_hash, full_name, allergens_json, diet, role, is_active FROM users WHERE email = ?",
             (email.lower(),),
         ).fetchone()
         if not row:
@@ -378,6 +430,8 @@ def get_user_by_email(email: str) -> Optional[dict[str, Any]]:
             "full_name": row["full_name"],
             "allergens_json": row["allergens_json"],
             "diet": row["diet"],
+            "role": row["role"] if "role" in row.keys() else "user",
+            "is_active": bool(row["is_active"]) if "is_active" in row.keys() else True,
         }
 
 
@@ -411,3 +465,37 @@ def create_user_record(
             "diet": row["diet"],
         }
 
+
+# --- Новые функции для работы с заказами ---
+
+def get_user_orders_count(user_id: int) -> int:
+    """Получить количество заказов пользователя."""
+    with get_connection() as conn:
+        result = conn.execute(
+            "SELECT COUNT(*) as count FROM orders WHERE user_id = ?",
+            (user_id,)
+        ).fetchone()
+        return result["count"] if result else 0
+
+
+def get_order_stats() -> dict:
+    """Получить статистику по заказам."""
+    with get_connection() as conn:
+        # Общее количество заказов
+        total = conn.execute("SELECT COUNT(*) as count FROM orders").fetchone()["count"]
+        
+        # Количество по статусам
+        by_status = conn.execute(
+            "SELECT status, COUNT(*) as count FROM orders GROUP BY status"
+        ).fetchall()
+        
+        # Общая выручка
+        revenue = conn.execute(
+            "SELECT SUM(total_price) as total FROM orders WHERE status != 'cancelled'"
+        ).fetchone()["total"] or 0
+        
+        return {
+            "total_orders": total,
+            "by_status": {row["status"]: row["count"] for row in by_status},
+            "total_revenue": revenue
+        }

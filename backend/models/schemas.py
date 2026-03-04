@@ -129,3 +129,11 @@ class Token(BaseModel):
 class TokenPayload(BaseModel):
     sub: str
     exp: int
+
+
+class UserPublic(UserBase):
+    id: int
+    allergens: list[str] = Field(default_factory=list)
+    diet: Optional[str] = None
+    role: str = Field(default="user", description="Роль пользователя (user/admin)")
+    is_active: bool = Field(default=True, description="Активен ли пользователь")
