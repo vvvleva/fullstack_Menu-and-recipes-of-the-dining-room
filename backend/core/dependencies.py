@@ -1,10 +1,26 @@
 """Зависимости для проверки прав доступа и авторизации."""
 from fastapi import HTTPException, Depends, status
+from fastapi.security import OAuth2PasswordBearer
 from typing import Optional
+from jose import JWTError
 import json
 
 from routes.auth import get_current_user
 from models.schemas import UserPublic
+
+
+# OAuth2 схемы
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=True)
+
+class OAuth2PasswordBearerOptional(OAuth2PasswordBearer):
+    """Опциональная OAuth2 схема, не выбрасывающая ошибку при отсутствии токена."""
+    async def __call__(self, request):
+        try:
+            return await super().__call__(request)
+        except HTTPException:
+            return None
+
+oauth2_scheme_optional = OAuth2PasswordBearerOptional(tokenUrl="/api/auth/login", auto_error=False)
 
 
 async def get_current_admin(current_user: UserPublic = Depends(get_current_user)) -> UserPublic:
@@ -38,14 +54,13 @@ async def get_current_user_optional(token: Optional[str] = Depends(oauth2_scheme
         return None
     
     try:
-        return await get_current_user(token)
+        # Используем существующую функцию get_current_user, передавая ей токен
+        from routes.auth import get_current_user as get_user
+        return await get_user(token)
     except HTTPException:
         return None
-
-
-def oauth2_scheme_optional(token: Optional[str] = Depends(oauth2_scheme)):
-    """Опциональная схема OAuth2."""
-    return token
+    except JWTError:
+        return None
 
 
 async def check_dish_ownership(dish_id: int, current_user: UserPublic = Depends(get_current_user)) -> bool:

@@ -11,7 +11,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from app_config import ACCESS_TOKEN_EXPIRE_DELTA, ALGORITHM, SECRET_KEY
+from config import ACCESS_TOKEN_EXPIRE_DELTA, ALGORITHM, SECRET_KEY
 from core.db import create_user_record, get_user_by_email
 from models.schemas import Token, TokenPayload, UserCreate, UserLogin, UserPublic
 

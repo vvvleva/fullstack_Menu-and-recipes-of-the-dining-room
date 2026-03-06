@@ -10,7 +10,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 # Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
 logger = logging.getLogger("dining_room")
@@ -106,6 +106,10 @@ class StructuredLogger:
         logger.warning(json.dumps(log_entry, ensure_ascii=False))
 
 
+# Создаем глобальный экземпляр
+structured_logger = StructuredLogger()
+
+
 # Middleware для логирования запросов
 class LoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -119,14 +123,10 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             duration_ms = (time.time() - start_time) * 1000
             
             # Логируем успешный запрос
-            logger.log_request(request, response, duration_ms, user_id)
+            structured_logger.log_request(request, response, duration_ms, user_id)
             
             return response
         except Exception as e:
             duration_ms = (time.time() - start_time) * 1000
-            logger.log_error(e, request, user_id)
+            structured_logger.log_error(e, request, user_id)
             raise
-
-
-# Создаем глобальный экземпляр
-structured_logger = StructuredLogger()
