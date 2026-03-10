@@ -49,7 +49,7 @@
                                 </div>
                             </div>
 
-                            <!-- Слайд 2: Детали блюда -->
+                            <!-- Слайд 2: Детали блюда (ИСПРАВЛЕНО) -->
                             <div class="card">
                                 <div class="card-header">
                                     <h3 id="dishTitle">Выберите блюдо</h3>
@@ -58,18 +58,20 @@
                                 <div class="card-content">
                                     <div class="dish-details">
                                         <div class="dish-image">
-                                            <div class="image-placeholder">ФОТО</div>
+                                            <div class="image-placeholder">
+                                                <!-- Изображение будет загружено динамически -->
+                                            </div>
                                         </div>
                                         
                                         <div id="aiBlock" class="ai-analysis">
                                             <div id="aiTitle" class="ai-title">Анализ аллергенов</div>
-                                            <div id="aiMessage" class="allergen-block">Выберите блюдо и настройте профиль аллергий.</div>
+                                            <div id="aiMessage" class="allergen-block">Выберите блюдо для анализа</div>
                                         </div>
                                         
                                         <div class="ingredients">
                                             <div class="ingredients-title">Состав</div>
                                             <ul id="ingredientsList" class="ingredients-list">
-                                                <!-- Состав блюда подгружается из /api/menu/{id} -->
+                                                <!-- Состав будет загружен динамически -->
                                             </ul>
                                         </div>
                                         
@@ -78,11 +80,11 @@
                                             <div class="dish-actions">
                                                 <span id="dishPrice" class="price">—</span>
                                                 <div class="quantity-controls">
-                                                    <button class="quantity-btn">−</button>
+                                                    <button class="quantity-btn" aria-label="Уменьшить количество">−</button>
                                                     <span class="quantity">1</span>
-                                                    <button class="quantity-btn">+</button>
+                                                    <button class="quantity-btn" aria-label="Увеличить количество">+</button>
                                                 </div>
-                                                <button class="add-btn">Добавить</button>
+                                                <button class="add-btn">Добавить в корзину</button>
                                             </div>
                                         </div>
                                     </div>
@@ -206,7 +208,7 @@
                 <div id="spa-root"></div>
             </section>
 
-            <!-- API тестер (ЛР №2, ЛР №4 CRUD) -->
+            <!-- API тестер -->
             <div class="api-section">
                 <h2>Тестирование API</h2>
                 
