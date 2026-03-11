@@ -1,4 +1,4 @@
-"""Маршруты меню и AI-анализа. CRUD для блюд (ЛР №4)."""
+"""Маршруты меню и AI-анализа. CRUD для блюд."""
 from fastapi import APIRouter, HTTPException
 
 from core.db import create_dish, delete_dish, get_dish, list_dishes, update_dish
@@ -18,8 +18,6 @@ def _not_found(item_id: int) -> HTTPException:
     )
 
 
-# ——— READ ———
-
 @router.get("/menu")
 async def get_menu():
     """Получить всё меню."""
@@ -33,7 +31,7 @@ async def get_menu():
 
 @router.get("/menu/category/{category}")
 async def get_menu_by_category(category: str):
-    """Получить блюда по категории. Маршрут должен быть выше /menu/{item_id}."""
+    """Получить блюда по категории."""
     filtered = list_dishes(category=category, only_available=True)
     return {
         "status": "success",
@@ -55,11 +53,9 @@ async def get_menu_item(item_id: int):
     }
 
 
-# ——— CREATE ———
-
 @router.post("/menu", status_code=201)
 async def create_menu_item(payload: MenuItemBase):
-    """Создать новое блюдо. Валидация через Pydantic."""
+    """Создать новое блюдо."""
     new_item = create_dish(payload.model_dump())
     return {
         "status": "success",
@@ -67,8 +63,6 @@ async def create_menu_item(payload: MenuItemBase):
         "data": new_item,
     }
 
-
-# ——— UPDATE ———
 
 @router.put("/menu/{item_id}")
 async def update_menu_item(item_id: int, payload: MenuItemBase):
@@ -121,8 +115,6 @@ async def patch_menu_item(item_id: int, payload: MenuItemUpdate):
     }
 
 
-# ——— DELETE ———
-
 @router.delete("/menu/{item_id}", status_code=200)
 async def delete_menu_item(item_id: int):
     """Удалить блюдо."""
@@ -135,8 +127,6 @@ async def delete_menu_item(item_id: int):
         "data": removed,
     }
 
-
-# ——— AI-анализ аллергенов ———
 
 @router.get("/analyze/{item_id}/{user_allergens}")
 async def analyze_allergens(item_id: int, user_allergens: str):

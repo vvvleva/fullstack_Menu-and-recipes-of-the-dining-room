@@ -46,7 +46,6 @@ async def get_my_orders(
     skip = (page - 1) * size
     orders = await order_service.get_user_orders(current_user.id, skip=skip, limit=size)
     
-    # Получаем общее количество заказов
     from core.db import get_connection
     with get_connection() as conn:
         total = conn.execute(
@@ -103,7 +102,6 @@ async def update_order_status(
     Пользователи могут только отменять свои заказы.
     Администраторы могут менять любой статус.
     """
-    # Проверяем, является ли пользователь админом
     from core.db import get_user_by_email
     user_record = get_user_by_email(current_user.email)
     is_admin = user_record and user_record.get("role") == "admin"
@@ -164,7 +162,6 @@ async def cancel_order(
     }
 
 
-# Админские эндпоинты
 @router.get("/admin/all", response_model=OrderListResponse)
 async def get_all_orders(
     page: int = Query(1, ge=1),
@@ -178,7 +175,6 @@ async def get_all_orders(
     """
     skip = (page - 1) * size
     
-    # Строим запрос с фильтрами
     from core.db import get_connection
     with get_connection() as conn:
         query = "SELECT * FROM orders WHERE 1=1"
@@ -197,10 +193,8 @@ async def get_all_orders(
         
         query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
         
-        # Получаем общее количество
         total = conn.execute(count_query, params).fetchone()["count"]
         
-        # Получаем заказы
         orders_rows = conn.execute(query, params + [size, skip]).fetchall()
         
         orders = []

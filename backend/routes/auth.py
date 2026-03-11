@@ -1,4 +1,4 @@
-"""Маршруты авторизации и работы с пользователем (ЛР по авторизации)."""
+"""Маршруты авторизации и работы с пользователем."""
 
 from __future__ import annotations
 
@@ -70,6 +70,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserPublic:
         full_name=record["full_name"],
         allergens=allergens,
         diet=record["diet"],
+        role=record.get("role", "user"),
+        is_active=record.get("is_active", True)
     )
 
 
@@ -99,6 +101,8 @@ async def register(user: UserCreate):
         full_name=record["full_name"],
         allergens=user.allergens or [],
         diet=user.diet,
+        role="user",
+        is_active=True
     )
 
 
@@ -125,6 +129,4 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 @router.get("/me", response_model=UserPublic)
 async def read_me(current_user: UserPublic = Depends(get_current_user)):
     """Профиль текущего авторизованного пользователя."""
-
     return current_user
-

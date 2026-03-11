@@ -1,125 +1,29 @@
+// Глобальные переменные
 let currentSlide = 0;
 const slides = document.querySelectorAll('.card');
 const dots = document.querySelectorAll('.dot');
 const track = document.getElementById('carouselTrack');
 const API_URL = 'http://localhost:8000';
 
-// Хранилище состояний
+// Состояния приложения
 let currentDishId = null;
 let dishQuantity = 1;
-let dishImages = {}; // Кэш для изображений
+let currentUser = null;
+let userAllergens = [];
+let authToken = localStorage.getItem('token');
 
+// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Страница загружена, инициализация...');
     checkServerStatus();
     setInterval(checkServerStatus, 5000);
     loadMenuFromApi();
-    initializeQuantityControls();
-    preloadDishImages(); // Предзагрузка изображений
+    loadUserProfile();
+    loadCart();
+    updateAuthUI();
 });
 
-// Инициализация обработчиков для кнопок количества
-function initializeQuantityControls() {
-    const quantityBtns = document.querySelectorAll('.quantity-btn');
-    const addBtn = document.querySelector('.add-btn');
-    
-    // Используем делегирование событий для динамических элементов
-    document.addEventListener('click', function(e) {
-        // Обработка кнопок + и -
-        if (e.target.classList.contains('quantity-btn')) {
-            const quantitySpan = document.querySelector('.quantity');
-            if (!quantitySpan) return;
-            
-            let currentQty = parseInt(quantitySpan.textContent) || 1;
-            
-            if (e.target.textContent === '+') {
-                currentQty++;
-            } else if (e.target.textContent === '−' && currentQty > 1) {
-                currentQty--;
-            }
-            
-            quantitySpan.textContent = currentQty;
-            dishQuantity = currentQty;
-        }
-        
-        // Обработка кнопки "Добавить"
-        if (e.target.classList.contains('add-btn')) {
-            addToCart();
-        }
-    });
-}
-
-// Функция добавления в корзину
-function addToCart() {
-    if (!currentDishId) {
-        alert('Сначала выберите блюдо');
-        return;
-    }
-    
-    const dishName = document.getElementById('dishTitle').textContent;
-    const dishPrice = document.getElementById('dishPrice').textContent;
-    
-    // Создаем уведомление
-    showNotification(`Добавлено: ${dishName} x${dishQuantity} = ${parseInt(dishPrice) * dishQuantity} ₽`);
-    
-    // Здесь можно добавить логику сохранения в корзину
-    console.log('Добавлено в корзину:', {
-        id: currentDishId,
-        name: dishName,
-        quantity: dishQuantity,
-        price: dishPrice
-    });
-}
-
-// Показ уведомления
-function showNotification(message) {
-    const notification = document.createElement('div');
-    notification.className = 'notification';
-    notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #333;
-        color: white;
-        padding: 12px 20px;
-        border-radius: 6px;
-        z-index: 1000;
-        animation: slideIn 0.3s ease;
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
-}
-
-// Предзагрузка изображений блюд
-async function preloadDishImages() {
-    try {
-        const response = await fetch(`${API_URL}/api/menu`);
-        const payload = await response.json();
-        const items = payload.data || [];
-        
-        // Создаем заглушки для изображений на основе названий блюд
-        items.forEach(item => {
-            const imageUrl = generateDishImageUrl(item.name, item.id);
-            dishImages[item.id] = imageUrl;
-            
-            // Предзагружаем изображение
-            const img = new Image();
-            img.src = imageUrl;
-        });
-    } catch (error) {
-        console.error('Ошибка предзагрузки изображений:', error);
-    }
-}
-
-// Генерация URL изображения для блюда
-function generateDishImageUrl(dishName, dishId) {
-     return `/images/dishes/${dishId}.jpg`;
-}
+// ==================== УПРАВЛЕНИЕ КАРУСЕЛЬЮ ====================
 
 function showSlide(index) {
     if (index < 0) index = 0;
@@ -147,8 +51,37 @@ function goToSlide(index) {
     showSlide(index);
 }
 
+// ==================== УПРАВЛЕНИЕ КОЛИЧЕСТВОМ ====================
+
+function increaseQuantity() {
+    console.log('Увеличение количества');
+    const quantitySpan = document.getElementById('dishQuantity');
+    if (quantitySpan) {
+        dishQuantity = parseInt(quantitySpan.textContent) + 1;
+        quantitySpan.textContent = dishQuantity;
+        console.log('Новое количество:', dishQuantity);
+    }
+}
+
+function decreaseQuantity() {
+    console.log('Уменьшение количества');
+    const quantitySpan = document.getElementById('dishQuantity');
+    if (quantitySpan) {
+        let currentQty = parseInt(quantitySpan.textContent);
+        if (currentQty > 1) {
+            dishQuantity = currentQty - 1;
+            quantitySpan.textContent = dishQuantity;
+            console.log('Новое количество:', dishQuantity);
+        }
+    }
+}
+
+// ==================== РАБОТА С СЕРВЕРОМ ====================
+
 async function checkServerStatus() {
     const statusEl = document.getElementById('serverStatus');
+    if (!statusEl) return;
+    
     const indicator = statusEl.querySelector('.status-indicator');
     const text = statusEl.querySelector('.status-text');
     
@@ -167,26 +100,7 @@ async function checkServerStatus() {
     }
 }
 
-async function testAPI(endpoint) {
-    const responseEl = document.getElementById('apiResponse');
-    responseEl.innerHTML = '<pre>Отправка запроса...</pre>';
-    
-    try {
-        let url = `${API_URL}/api/${endpoint}`;
-        if (endpoint === 'health') {
-            url = `${API_URL}/health`;
-        }
-        
-        const response = await fetch(url);
-        const data = await response.json();
-        
-        responseEl.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-    } catch (error) {
-        responseEl.innerHTML = `<pre>Ошибка: ${error.message}</pre>`;
-    }
-}
-
-// --- Динамическое меню и состав блюда ---
+// ==================== ЗАГРУЗКА МЕНЮ ====================
 
 async function loadMenuFromApi() {
     const listEl = document.getElementById('menuList');
@@ -228,9 +142,22 @@ async function loadMenuFromApi() {
             row.appendChild(priceSpan);
 
             const allergenDiv = document.createElement('div');
+            allergenDiv.className = 'item-allergen';
+            
             const hasAllergens = Array.isArray(item.allergens) && item.allergens.length > 0;
-            allergenDiv.className = 'item-allergen ' + (hasAllergens ? 'warning' : 'safe');
-            allergenDiv.textContent = hasAllergens ? 'Содержит потенциальные аллергены' : 'Безопасно';
+            const hasUserAllergens = hasAllergens && userAllergens.length > 0 ? 
+                item.allergens.some(a => userAllergens.includes(a)) : false;
+            
+            if (hasUserAllergens) {
+                allergenDiv.classList.add('warning');
+                allergenDiv.textContent = 'Содержит ваши аллергены';
+            } else if (hasAllergens) {
+                allergenDiv.classList.add('warning');
+                allergenDiv.textContent = 'Содержит аллергены';
+            } else {
+                allergenDiv.classList.add('safe');
+                allergenDiv.textContent = 'Безопасно';
+            }
 
             wrapper.appendChild(row);
             wrapper.appendChild(allergenDiv);
@@ -242,7 +169,10 @@ async function loadMenuFromApi() {
     }
 }
 
+// ==================== ВЫБОР БЛЮДА ====================
+
 async function selectDish(id) {
+    console.log('Выбрано блюдо с ID:', id);
     try {
         const response = await fetch(`${API_URL}/api/menu/${id}`);
         if (!response.ok) {
@@ -253,13 +183,15 @@ async function selectDish(id) {
         if (!dish) return;
 
         currentDishId = dish.id;
-        dishQuantity = 1; // Сбрасываем количество
-        document.querySelector('.quantity').textContent = '1';
+        dishQuantity = 1;
+        const quantitySpan = document.getElementById('dishQuantity');
+        if (quantitySpan) quantitySpan.textContent = '1';
         
         renderDishDetails(dish);
         goToSlide(1);
     } catch (error) {
         console.error(error);
+        showNotification(error.message, 'error');
     }
 }
 
@@ -268,7 +200,6 @@ function renderDishDetails(dish) {
     const ingredientsEl = document.getElementById('ingredientsList');
     const metaEl = document.getElementById('dishMeta');
     const priceEl = document.getElementById('dishPrice');
-    const imagePlaceholder = document.querySelector('.image-placeholder');
     const aiBlock = document.getElementById('aiBlock');
     const aiTitle = document.getElementById('aiTitle');
     const aiMessage = document.getElementById('aiMessage');
@@ -277,19 +208,18 @@ function renderDishDetails(dish) {
     if (priceEl) priceEl.textContent = `${dish.price} ₽`;
     if (metaEl) metaEl.textContent = `${dish.weight} г · ${dish.calories} ккал`;
 
-    // Загружаем изображение
-    if (imagePlaceholder) {
-        const imageUrl = dishImages[dish.id] || generateDishImageUrl(dish.name, dish.id);
-        imagePlaceholder.innerHTML = `<img src="${imageUrl}" alt="${dish.name}" style="width:100%;height:100%;object-fit:cover;">`;
-        imagePlaceholder.style.background = 'none';
-    }
-
-    // AI анализ
     if (aiBlock && aiTitle && aiMessage) {
-        if (dish.allergens && dish.allergens.length > 0) {
+        const dishAllergens = Array.isArray(dish.allergens) ? dish.allergens : [];
+        const matchingAllergens = dishAllergens.filter(a => userAllergens.includes(a));
+        
+        if (matchingAllergens.length > 0) {
             aiBlock.className = 'ai-analysis danger';
-            aiTitle.textContent = 'AI-анализ: обнаружены аллергены';
-            aiMessage.textContent = `Внимание! Блюдо содержит: ${dish.allergens.join(', ')}`;
+            aiTitle.textContent = 'AI-анализ: обнаружены ваши аллергены';
+            aiMessage.textContent = `Внимание! Блюдо содержит: ${matchingAllergens.join(', ')}`;
+        } else if (dishAllergens.length > 0) {
+            aiBlock.className = 'ai-analysis warning';
+            aiTitle.textContent = 'AI-анализ: блюдо содержит аллергены';
+            aiMessage.textContent = `Блюдо содержит: ${dishAllergens.join(', ')} (нет ваших аллергенов)`;
         } else {
             aiBlock.className = 'ai-analysis safe';
             aiTitle.textContent = 'AI-анализ: безопасно';
@@ -297,11 +227,10 @@ function renderDishDetails(dish) {
         }
     }
 
-    // Ингредиенты
     if (ingredientsEl) {
         ingredientsEl.innerHTML = '';
         const ingredients = Array.isArray(dish.ingredients) ? dish.ingredients : [];
-        const allergens = new Set(Array.isArray(dish.allergens) ? dish.allergens : []);
+        const dishAllergens = new Set(Array.isArray(dish.allergens) ? dish.allergens : []);
 
         if (!ingredients.length) {
             const li = document.createElement('li');
@@ -312,7 +241,9 @@ function renderDishDetails(dish) {
                 const li = document.createElement('li');
                 li.textContent = ing;
                 const lower = (ing || '').toLowerCase();
-                const isAllergen = Array.from(allergens).some(a => lower.includes(a.toLowerCase()));
+                const isAllergen = Array.from(dishAllergens).some(a => 
+                    lower.includes(a.toLowerCase()) || a.toLowerCase().includes(lower)
+                );
                 if (isAllergen) {
                     li.classList.add('allergen-item');
                 }
@@ -322,12 +253,311 @@ function renderDishDetails(dish) {
     }
 }
 
-async function testAI() {
-    const responseEl = document.getElementById('apiResponse');
-    responseEl.innerHTML = '<pre>Выполняется AI анализ...</pre>';
+// ==================== РАБОТА С КОРЗИНОЙ ====================
+
+function addToCart() {
+    console.log('Добавление в корзину');
+    if (!currentDishId) {
+        showNotification('Сначала выберите блюдо', 'warning');
+        return;
+    }
+    
+    const dishName = document.getElementById('dishTitle').textContent;
+    const priceText = document.getElementById('dishPrice').textContent;
+    const dishPrice = parseInt(priceText) || 0;
+    const quantity = dishQuantity;
+    const total = dishPrice * quantity;
+    
+    const cartItem = {
+        id: currentDishId,
+        name: dishName,
+        quantity: quantity,
+        price: dishPrice,
+        total: total,
+        timestamp: new Date().toISOString()
+    };
+    
+    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    
+    const existingItem = cart.find(item => item.id === currentDishId);
+    if (existingItem) {
+        existingItem.quantity += quantity;
+        existingItem.total = existingItem.price * existingItem.quantity;
+    } else {
+        cart.push(cartItem);
+    }
+    
+    localStorage.setItem('cart', JSON.stringify(cart));
+    
+    showNotification(`Добавлено: ${dishName} x${quantity} = ${total} ₽`, 'success');
+    loadCart();
+}
+
+function loadCart() {
+    const cartItemsEl = document.getElementById('cartItems');
+    const cartTotalEl = document.getElementById('cartTotal');
+    if (!cartItemsEl) return;
+    
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    
+    if (cart.length === 0) {
+        cartItemsEl.innerHTML = '<p class="empty-cart">Корзина пуста</p>';
+        if (cartTotalEl) cartTotalEl.textContent = '';
+        return;
+    }
+    
+    let html = '';
+    let total = 0;
+    
+    cart.forEach((item, index) => {
+        total += item.total;
+        html += `
+            <div class="cart-item">
+                <div class="cart-item-info">
+                    <span class="cart-item-name">${item.name}</span>
+                    <span class="cart-item-price">${item.price} ₽ x ${item.quantity}</span>
+                </div>
+                <div class="cart-item-total">${item.total} ₽</div>
+                <button class="cart-item-remove" onclick="removeFromCart(${index})">Удалить</button>
+            </div>
+        `;
+    });
+    
+    cartItemsEl.innerHTML = html;
+    if (cartTotalEl) cartTotalEl.textContent = `Итого: ${total} ₽`;
+}
+
+function removeFromCart(index) {
+    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    cart.splice(index, 1);
+    localStorage.setItem('cart', JSON.stringify(cart));
+    loadCart();
+    showNotification('Товар удален из корзины', 'info');
+}
+
+function checkout() {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    if (cart.length === 0) {
+        showNotification('Корзина пуста', 'warning');
+        return;
+    }
+    
+    if (!authToken) {
+        showNotification('Необходимо авторизоваться', 'warning');
+        showLoginForm();
+        return;
+    }
+    
+    createOrder();
+}
+
+async function createOrder() {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    
+    const orderData = {
+        items: cart.map(item => ({
+            dish_id: item.id,
+            quantity: item.quantity,
+            special_requests: ''
+        })),
+        comments: 'Заказ через веб-интерфейс'
+    };
     
     try {
-        const response = await fetch(`${API_URL}/api/analyze/1/орехи,лактоза`);
+        const response = await fetch(`${API_URL}/api/orders/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify(orderData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showNotification('Заказ успешно создан', 'success');
+            localStorage.removeItem('cart');
+            loadCart();
+        } else {
+            showNotification(data.detail?.message || 'Ошибка при создании заказа', 'error');
+        }
+    } catch (error) {
+        showNotification('Ошибка соединения с сервером', 'error');
+    }
+}
+
+// ==================== АВТОРИЗАЦИЯ ====================
+
+function showLoginForm() {
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.style.display = 'flex';
+    }
+}
+
+function hideLoginForm() {
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.style.display = 'none';
+    }
+}
+
+async function handleLogin(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    const formData = new URLSearchParams();
+    formData.append('username', email);
+    formData.append('password', password);
+    
+    try {
+        const response = await fetch(`${API_URL}/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            authToken = data.access_token;
+            localStorage.setItem('token', authToken);
+            
+            showNotification('Вход выполнен успешно', 'success');
+            hideLoginForm();
+            
+            await loadCurrentUser();
+            updateAuthUI();
+        } else {
+            showNotification('Неверный email или пароль', 'error');
+        }
+    } catch (error) {
+        showNotification('Ошибка соединения с сервером', 'error');
+    }
+}
+
+async function loadCurrentUser() {
+    if (!authToken) return;
+    
+    try {
+        const response = await fetch(`${API_URL}/auth/me`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        if (response.ok) {
+            const userData = await response.json();
+            currentUser = userData;
+            userAllergens = userData.allergens || [];
+            updateProfileUI();
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки пользователя:', error);
+    }
+}
+
+function logout() {
+    authToken = null;
+    localStorage.removeItem('token');
+    currentUser = null;
+    userAllergens = [];
+    updateAuthUI();
+    showNotification('Вы вышли из системы', 'info');
+}
+
+function updateAuthUI() {
+    const userInfo = document.getElementById('userInfo');
+    const profileName = document.getElementById('profileName');
+    const profileEmail = document.getElementById('profileEmail');
+    const profileAvatar = document.getElementById('profileAvatar');
+    
+    if (authToken && currentUser) {
+        if (userInfo) userInfo.style.display = 'block';
+        if (profileName) profileName.textContent = currentUser.full_name || 'Пользователь';
+        if (profileEmail) profileEmail.textContent = currentUser.email;
+        if (profileAvatar) profileAvatar.textContent = (currentUser.full_name || 'Г').charAt(0).toUpperCase();
+    } else {
+        if (userInfo) userInfo.style.display = 'none';
+        if (profileName) profileName.textContent = 'Гость';
+        if (profileEmail) profileEmail.textContent = 'не авторизован';
+        if (profileAvatar) profileAvatar.textContent = 'Г';
+    }
+}
+
+// ==================== ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ ====================
+
+function loadUserProfile() {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        userAllergens = currentUser.allergens || [];
+        updateProfileUI();
+    }
+}
+
+function updateProfileUI() {
+    const checkboxes = document.querySelectorAll('.profile-section input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        cb.checked = userAllergens.includes(cb.value);
+    });
+}
+
+function saveProfile() {
+    const selectedAllergens = [];
+    const checkboxes = document.querySelectorAll('.profile-section input[type="checkbox"]:checked');
+    checkboxes.forEach(cb => {
+        selectedAllergens.push(cb.value);
+    });
+    
+    let diet = '';
+    const dietRadios = document.querySelectorAll('input[name="diet"]');
+    for (let radio of dietRadios) {
+        if (radio.checked) {
+            diet = radio.value;
+            break;
+        }
+    }
+    
+    if (!authToken) {
+        currentUser = {
+            name: 'Гость',
+            email: 'guest@local',
+            allergens: selectedAllergens,
+            diet: diet,
+            lastLogin: new Date().toISOString()
+        };
+        
+        localStorage.setItem('user', JSON.stringify(currentUser));
+        userAllergens = selectedAllergens;
+        
+        showNotification('Настройки сохранены локально', 'success');
+    } else {
+        // Здесь можно добавить сохранение на сервер
+        showNotification('Настройки сохранены', 'success');
+    }
+    
+    loadMenuFromApi();
+}
+
+// ==================== API ТЕСТИРОВАНИЕ ====================
+
+async function testAPI(endpoint) {
+    const responseEl = document.getElementById('apiResponse');
+    responseEl.innerHTML = '<pre>Отправка запроса...</pre>';
+    
+    try {
+        let url = `${API_URL}/api/${endpoint}`;
+        if (endpoint === 'health') {
+            url = `${API_URL}/health`;
+        }
+        
+        const response = await fetch(url);
         const data = await response.json();
         
         responseEl.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
@@ -336,7 +566,21 @@ async function testAI() {
     }
 }
 
-// CRUD (ЛР №4)
+async function testAI() {
+    const responseEl = document.getElementById('apiResponse');
+    responseEl.innerHTML = '<pre>Выполняется AI анализ...</pre>';
+    
+    try {
+        const userAllergensStr = userAllergens.length > 0 ? userAllergens.join(',') : 'нет';
+        const response = await fetch(`${API_URL}/api/analyze/1/${userAllergensStr}`);
+        const data = await response.json();
+        
+        responseEl.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    } catch (error) {
+        responseEl.innerHTML = `<pre>Ошибка: ${error.message}</pre>`;
+    }
+}
+
 async function testCreate() {
     const responseEl = document.getElementById('apiResponse');
     responseEl.innerHTML = '<pre>POST /api/menu — создание блюда...</pre>';
@@ -360,76 +604,74 @@ async function testCreate() {
         });
         const data = await response.json();
         responseEl.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-        loadMenuFromApi(); // Обновляем меню
+        loadMenuFromApi();
     } catch (error) {
         responseEl.innerHTML = `<pre>Ошибка: ${error.message}</pre>`;
     }
 }
 
-async function testUpdate() {
-    const responseEl = document.getElementById('apiResponse');
-    responseEl.innerHTML = '<pre>PUT /api/menu/1 — обновление блюда...</pre>';
+// ==================== УПРАВЛЕНИЕ СЕКЦИЯМИ ====================
+
+function showSection(sectionId) {
+    const mainContent = document.getElementById('mainContent');
+    const loginForm = document.getElementById('loginForm');
     
-    const body = {
-        name: "Цезарь с курицей (обновлённый)",
-        price: 380,
-        weight: 280,
-        category: "салаты",
-        ingredients: ["курица", "салат айсберг", "соус", "пармезан", "грецкий орех", "гренки"],
-        allergens: ["орехи", "глютен", "лактоза"],
-        calories: 450,
-        available: true
+    if (sectionId === 'main') {
+        if (mainContent) mainContent.style.display = 'block';
+        if (loginForm) loginForm.style.display = 'none';
+    }
+}
+
+// ==================== УВЕДОМЛЕНИЯ ====================
+
+function showNotification(message, type = 'info') {
+    const container = document.getElementById('notification-container');
+    if (!container) return;
+    
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    
+    const colors = {
+        success: '#00a86b',
+        warning: '#b85c00',
+        error: '#dc3545',
+        info: '#0066cc'
     };
     
-    try {
-        const response = await fetch(`${API_URL}/api/menu/1`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body)
-        });
-        const data = await response.json();
-        responseEl.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-        loadMenuFromApi(); // Обновляем меню
-    } catch (error) {
-        responseEl.innerHTML = `<pre>Ошибка: ${error.message}</pre>`;
-    }
-}
-
-async function testDelete() {
-    const responseEl = document.getElementById('apiResponse');
-    responseEl.innerHTML = '<pre>DELETE /api/menu/5 — удаление блюда...</pre>';
+    notification.style.cssText = `
+        background: ${colors[type] || colors.info};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideIn 0.3s ease;
+    `;
     
-    try {
-        const response = await fetch(`${API_URL}/api/menu/5`, { method: "DELETE" });
-        const data = await response.json();
-        responseEl.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-        loadMenuFromApi(); // Обновляем меню
-    } catch (error) {
-        responseEl.innerHTML = `<pre>Ошибка: ${error.message}</pre>`;
-    }
+    container.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 
-// Клавиши для карусели
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'ArrowLeft') {
-        prevSlide();
-    } else if (e.key === 'ArrowRight') {
-        nextSlide();
-    }
-});
+// ==================== НАВИГАЦИЯ ====================
 
-// Свайпы для мобильных
 let touchStartX = 0;
 let touchEndX = 0;
 
-track.addEventListener('touchstart', function(e) {
-    touchStartX = e.changedTouches[0].screenX;
-});
+if (track) {
+    track.addEventListener('touchstart', function(e) {
+        touchStartX = e.changedTouches[0].screenX;
+    });
 
-track.addEventListener('touchend', function(e) {
-    touchEndX = e.changedTouches[0].screenX;
-    handleSwipe();
-});
+    track.addEventListener('touchend', function(e) {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    });
+}
 
 function handleSwipe() {
     const threshold = 50;
@@ -441,113 +683,15 @@ function handleSwipe() {
     }
 }
 
-// React компоненты остаются без изменений
-const { BrowserRouter, Routes, Route, NavLink } = ReactRouterDOM;
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowLeft') {
+        prevSlide();
+    } else if (e.key === 'ArrowRight') {
+        nextSlide();
+    }
+});
 
-function Navigation() {
-  return (
-    <nav className="spa-nav">
-      <NavLink to="/" end className="spa-link">
-        Меню
-      </NavLink>
-      <NavLink to="/profile" className="spa-link">
-        Профиль
-      </NavLink>
-      <NavLink to="/about" className="spa-link">
-        О проекте
-      </NavLink>
-    </nav>
-  );
-}
-
-function Layout() {
-  return (
-    <div className="spa-card">
-      <header className="spa-header">
-        <div className="spa-title">SPA-панель столовой</div>
-        <div className="spa-description">
-          Демонстрация клиентской маршрутизации (React Router) для будущих CRUD, авторизации и интеграции с API.
-        </div>
-      </header>
-
-      <Navigation />
-
-      <main className="spa-main">
-        <Routes>
-          <Route path="/" element={<MenuPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/about" element={<AboutPage />} />
-        </Routes>
-      </main>
-    </div>
-  );
-}
-
-function MenuPage() {
-  return (
-    <section>
-      <h3>Меню на сегодня</h3>
-      <p className="spa-text">
-        Здесь в следующих лабораторных (ЛР №4 и №7) будут отображаться реальные данные из эндпоинтов
-        <code> /api/menu </code> и <code>/api/menu/&lt;id&gt;</code> c обработкой загрузки и ошибок.
-      </p>
-      <ul className="spa-list">
-        <li>Список блюд с ценой, весом и категорией</li>
-        <li>Метка «Безопасно»/«Опасно» по результатам анализа аллергенов</li>
-        <li>Кнопка перехода к подробной карточке блюда</li>
-      </ul>
-    </section>
-  );
-}
-
-function ProfilePage() {
-  return (
-    <section>
-      <h3>Профиль и аллергены</h3>
-      <p className="spa-text">
-        Экран для хранения предпочтений пользователя: аллергены, диета, история выборов.
-        В дальнейших ЛР (№5–6) здесь появятся авторизация и защита маршрутов.
-      </p>
-      <ul className="spa-list">
-        <li>Выбор аллергенов (орехи, лактоза, глютен, морепродукты)</li>
-        <li>Выбор диеты (веган, безглютеновая и др.)</li>
-        <li>Сохранение настроек после входа в систему</li>
-      </ul>
-    </section>
-  );
-}
-
-function AboutPage() {
-  return (
-    <section>
-      <h3>О проекте</h3>
-      <p className="spa-text">
-        Проект "Столовая #2049" разрабатывается в рамках лабораторных работ.
-        Основные технологии: FastAPI, SQLite, React, React Router.
-      </p>
-      <ul className="spa-list">
-        <li>ЛР №1-2: Проектирование UI/UX + Развёртывание сервера</li>
-        <li>ЛР №3: SPA и маршрутизация на React Router</li>
-        <li>ЛР №4: CRUD операции, работа с БД</li>
-        <li>ЛР №5-6: Авторизация и аутентификация</li>
-        <li>ЛР №7: Интеграция и тестирование</li>
-      </ul>
-    </section>
-  );
-}
-
-function App() {
-  return (
-    <ReactRouterDOM.BrowserRouter>
-      <Layout />
-    </ReactRouterDOM.BrowserRouter>
-  );
-}
-
-const root = ReactDOM.createRoot(document.getElementById("spa-root"));
-root.render(<App />);
-
-// Добавляем анимации для уведомлений
+// Добавляем стили для уведомлений
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
@@ -572,8 +716,140 @@ style.textContent = `
         }
     }
     
-    .notification {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    .login-form {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+    
+    .login-card {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 400px;
+    }
+    
+    .login-card h2 {
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .login-button, .cancel-button {
+        width: 100%;
+        padding: 10px;
+        margin-top: 10px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    
+    .login-button {
+        background: #333;
+        color: white;
+    }
+    
+    .cancel-button {
+        background: #f0f0f0;
+        color: #333;
+    }
+    
+    .user-info {
+        background: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .user-info-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .logout-btn {
+        padding: 5px 15px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .cart-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .cart-item-info {
+        flex: 1;
+    }
+    
+    .cart-item-name {
+        display: block;
+        font-weight: 500;
+    }
+    
+    .cart-item-price {
+        font-size: 12px;
+        color: #666;
+    }
+    
+    .cart-item-total {
+        font-weight: 600;
+        margin-right: 10px;
+    }
+    
+    .cart-item-remove {
+        padding: 3px 8px;
+        background: #f0f0f0;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    
+    .cart-total {
+        font-size: 18px;
+        font-weight: 600;
+        text-align: right;
+        margin: 15px 0;
+        padding-top: 10px;
+        border-top: 2px solid #eee;
+    }
+    
+    .checkout-btn {
+        width: 100%;
+        padding: 12px;
+        background: #00a86b;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+    }
+    
+    .checkout-btn:hover {
+        background: #00875a;
+    }
+    
+    .empty-cart {
+        text-align: center;
+        color: #666;
+        padding: 20px;
     }
 `;
 document.head.appendChild(style);

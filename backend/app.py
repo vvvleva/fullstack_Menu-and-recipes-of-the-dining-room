@@ -8,7 +8,7 @@ from typing import AsyncGenerator
 import asyncio
 
 from config import FRONTEND_DIR
-from core.db import init_db  # Это синхронная функция
+from core.db import init_db
 from core.exceptions import (
     generic_exception_handler,
     http_exception_handler,
@@ -31,22 +31,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator:
     Управление жизненным циклом приложения.
     Выполняется при старте и завершении работы приложения.
     """
-    # Startup
-    print("Starting up...")
+    print("Запуск приложения...")
     try:
-        # Запускаем синхронную функцию в отдельном потоке
         await asyncio.to_thread(init_db)
-        print("Database initialized")
+        print("База данных инициализирована")
     except Exception as e:
-        print(f"Error during startup: {e}")
-        raise  # Пробрасываем ошибку дальше
+        print(f"Ошибка при запуске: {e}")
+        raise
     
-    yield  # Приложение работает здесь
+    yield
     
-    # Shutdown
-    print("Shutting down...")
-    # Здесь можно добавить cleanup, закрытие соединений и т.д.
-    print("Cleanup completed")
+    print("Остановка приложения...")
 
 
 def create_app() -> FastAPI:
@@ -58,7 +53,6 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # CORS
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -67,17 +61,12 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     
-    # Логирование
     app.add_middleware(LoggingMiddleware)
-    
-    # Rate limiting
     app.add_middleware(RateLimitMiddleware)
 
-    # Статика
     if FRONTEND_DIR.exists():
         app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
-    # Роуты
     app.include_router(root_router)
     app.include_router(auth_router)
     app.include_router(menu_router)
@@ -85,7 +74,6 @@ def create_app() -> FastAPI:
     app.include_router(admin_router)
     app.include_router(frontend_router)
 
-    # Обработчики ошибок
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(Exception, generic_exception_handler)

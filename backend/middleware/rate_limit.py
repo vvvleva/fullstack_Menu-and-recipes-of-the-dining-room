@@ -51,16 +51,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         client_ip = self._get_client_ip(request)
         
-        # Очищаем старые записи
         self._clean_old_requests(client_ip)
         
-        # Определяем лимит для эндпоинта
         if self._is_auth_endpoint(request):
             limit = self.auth_limit
         else:
             limit = self.default_limit
         
-        # Проверяем количество запросов
         if len(self.requests[client_ip]) >= limit:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -71,9 +68,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 }
             )
         
-        # Добавляем текущий запрос
         self.requests[client_ip].append(time.time())
         
-        # Продолжаем обработку
         response = await call_next(request)
         return response

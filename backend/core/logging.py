@@ -7,7 +7,6 @@ from typing import Optional, Dict, Any
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-# Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -106,23 +105,19 @@ class StructuredLogger:
         logger.warning(json.dumps(log_entry, ensure_ascii=False))
 
 
-# Создаем глобальный экземпляр
 structured_logger = StructuredLogger()
 
 
-# Middleware для логирования запросов
 class LoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         start_time = time.time()
         
-        # Получаем user_id из request.state если есть
         user_id = getattr(request.state, "user_id", None)
         
         try:
             response = await call_next(request)
             duration_ms = (time.time() - start_time) * 1000
             
-            # Логируем успешный запрос
             structured_logger.log_request(request, response, duration_ms, user_id)
             
             return response

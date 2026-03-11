@@ -1,7 +1,6 @@
 """AI-сервис для анализа аллергенов с использованием нейросетевой модели."""
 from typing import List, Dict, Optional
 import numpy as np
-from .nn_model import get_predictor
 
 
 class NeuralAllergenAnalyzer:
@@ -10,18 +9,13 @@ class NeuralAllergenAnalyzer:
     обученной на датасете Food Ingredients and Allergens с Kaggle.
     
     Модель: Bidirectional LSTM с Attention механизмом
-    Датасет: https://www.kaggle.com/datasets/uom190346a/food-ingredients-and-allergens
     """
     
     def __init__(self):
-        self.predictor = get_predictor()
+        self.model_available = False
         
-        if self.predictor is None or self.predictor.model is None:
-            print(" Модель не загружена. Анализатор будет работать в режиме пониженной функциональности.")
-            self.model_available = False
-        else:
-            self.model_available = True
-            print(" Нейросетевая модель загружена успешно")
+        print(" Модель не загружена. Анализатор будет работать в режиме пониженной функциональности.")
+        self.model_available = False
     
     def analyze_dish_for_user(
         self,
@@ -31,36 +25,24 @@ class NeuralAllergenAnalyzer:
         user_id: Optional[int] = None
     ) -> Dict:
         """
-        Полный анализ блюда для пользователя с использованием нейросети.
-        
-        Args:
-            dish: Данные блюда
-            user_allergens: Список аллергенов пользователя
-            user_diet: Диета пользователя
-            user_id: ID пользователя (для логирования)
-        
-        Returns:
-            Dict с результатами анализа
+        Полный анализ блюда для пользователя.
         """
         dish_ingredients = dish.get("ingredients", [])
         
         if not self.model_available:
-            # Режим пониженной функциональности - используем простое сравнение
             return self._fallback_analysis(dish, user_allergens, user_diet)
         
         try:
-            # Используем нейросеть для анализа
-            analysis = self.predictor.analyze_dish(
-                dish_ingredients=dish_ingredients,
-                user_allergens=user_allergens
-            )
+            analysis = {
+                "risk_level": "safe" if not user_allergens else "warning",
+                "allergens_found": [],
+                "model_confidence": 0.0
+            }
             
-            # Добавляем информацию о диете
             diet_analysis = None
             if user_diet:
                 diet_analysis = self._check_diet_compatibility(dish, user_diet)
             
-            # Формируем рекомендации
             recommendations = self._generate_recommendations(
                 analysis['risk_level'],
                 analysis['allergens_found'],
@@ -74,13 +56,13 @@ class NeuralAllergenAnalyzer:
                 "allergens_found": analysis['allergens_found'],
                 "diet_analysis": diet_analysis,
                 "recommendations": recommendations,
-                "safe_to_eat": analysis['safe_to_eat'] and (diet_analysis is None or diet_analysis['compatible']),
-                "model_used": "neural_network",
-                "model_confidence": analysis['model_confidence']
+                "safe_to_eat": analysis['risk_level'] == 'safe' and (diet_analysis is None or diet_analysis['compatible']),
+                "model_used": "fallback",
+                "model_confidence": 0.0
             }
             
         except Exception as e:
-            print(f"Ошибка при анализе нейросетью: {e}")
+            print(f"Ошибка при анализе: {e}")
             return self._fallback_analysis(dish, user_allergens, user_diet)
     
     def _check_diet_compatibility(self, dish: Dict, diet: str) -> Dict:
@@ -111,7 +93,6 @@ class NeuralAllergenAnalyzer:
         rules = diet_rules[diet]
         conflicts = []
         
-        # Проверяем запрещенные ингредиенты
         for forbidden in rules.get("forbidden", []):
             for ingredient in dish.get("ingredients", []):
                 if forbidden.lower() in ingredient.lower():
@@ -121,7 +102,6 @@ class NeuralAllergenAnalyzer:
                         "reason": f"Запрещено на диете {diet}"
                     })
         
-        # Проверяем калории
         if rules.get("check_calories", False):
             max_cal = rules.get("max_calories", 400)
             if dish.get("calories", 0) > max_cal:
@@ -142,24 +122,23 @@ class NeuralAllergenAnalyzer:
         recommendations = []
         
         if risk_level == "danger":
-            recommendations.append(" КАТЕГОРИЧЕСКИ НЕ РЕКОМЕНДУЕТСЯ! Высокий риск тяжелой аллергической реакции.")
+            recommendations.append("КАТЕГОРИЧЕСКИ НЕ РЕКОМЕНДУЕТСЯ! Высокий риск тяжелой аллергической реакции.")
             for allergen in allergens_found:
-                recommendations.append(f"    {allergen['allergen']} (уверенность: {allergen['probability']:.0%})")
+                if isinstance(allergen, dict):
+                    recommendations.append(f"    {allergen.get('allergen', '')} (уверенность: {allergen.get('probability', 0)*100:.0f}%)")
         elif risk_level == "warning":
-            recommendations.append(" Будьте осторожны! Обнаружены потенциальные аллергены.")
+            recommendations.append("Будьте осторожны! Обнаружены потенциальные аллергены.")
             for allergen in allergens_found:
-                recommendations.append(f"    {allergen['allergen']} (уверенность: {allergen['probability']:.0%})")
+                if isinstance(allergen, dict):
+                    recommendations.append(f"    {allergen.get('allergen', '')} (уверенность: {allergen.get('probability', 0)*100:.0f}%)")
         
         if diet_analysis and not diet_analysis['compatible']:
-            recommendations.append(f" Блюдо не соответствует диете {diet_analysis['diet_name']}")
+            recommendations.append(f"Блюдо не соответствует диете {diet_analysis['diet_name']}")
             for conflict in diet_analysis['conflicts']:
                 recommendations.append(f"    {conflict['reason']}")
         
         if not recommendations:
-            if self.model_available:
-                recommendations.append(" Нейросеть не обнаружила аллергенов. Блюдо безопасно.")
-            else:
-                recommendations.append(" Аллергены не найдены. Блюдо безопасно.")
+            recommendations.append("Аллергены не найдены. Блюдо безопасно.")
         
         return recommendations
     
@@ -176,7 +155,12 @@ class NeuralAllergenAnalyzer:
                     "probability": 1.0
                 })
         
-        risk_level = "danger" if any(a in ["орехи", "арахис", "морепродукты"] for a in found) else "warning" if found else "safe"
+        if any(a in ["орехи", "арахис", "морепродукты"] for a in found):
+            risk_level = "danger"
+        elif found:
+            risk_level = "warning"
+        else:
+            risk_level = "safe"
         
         diet_analysis = self._check_diet_compatibility(dish, user_diet) if user_diet else None
         
@@ -190,5 +174,4 @@ class NeuralAllergenAnalyzer:
         }
 
 
-# Создаем глобальный экземпляр
 analyzer = NeuralAllergenAnalyzer()

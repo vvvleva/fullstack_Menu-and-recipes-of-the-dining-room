@@ -1,11 +1,11 @@
-"""Обработчики исключений (ЛР №4)."""
+"""Обработчики исключений."""
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 
 
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
-    """Единый формат ответа для HTTPException (404, 400 и т.д.)."""
+    """Единый формат ответа для HTTPException."""
     detail = exc.detail
     if isinstance(detail, dict):
         body = {"status": "error", **detail}
@@ -17,7 +17,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
-    """Единый формат ответа при ошибках валидации (422)."""
+    """Единый формат ответа при ошибках валидации."""
     errors = []
     for err in exc.errors():
         loc = ".".join(str(x) for x in err["loc"] if x != "body")
@@ -34,7 +34,7 @@ async def validation_exception_handler(
 
 
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    """Обработка неожиданных ошибок (500)."""
+    """Обработка неожиданных ошибок."""
     if isinstance(exc, HTTPException):
         raise exc
     return JSONResponse(

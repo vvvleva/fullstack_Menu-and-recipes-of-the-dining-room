@@ -4,9 +4,6 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
-# --- Блюда ---
-
-# Допустимые категории блюд
 ALLOWED_CATEGORIES = {"салаты", "супы", "горячее", "гарниры", "напитки", "десерты"}
 
 
@@ -43,7 +40,6 @@ class MenuItemBase(BaseModel):
 
 class MenuItemCreate(MenuItemBase):
     """Схема для создания блюда (POST)."""
-
     pass
 
 
@@ -96,9 +92,6 @@ class MenuItemResponse(BaseModel):
     available: bool
 
 
-# --- Пользователи и авторизация ---
-
-
 class UserBase(BaseModel):
     email: EmailStr = Field(..., description="Email пользователя (логин)")
     full_name: Optional[str] = Field(None, max_length=200, description="Полное имя")
@@ -113,12 +106,6 @@ class UserCreate(UserBase):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
-
-
-class UserPublic(UserBase):
-    id: int
-    allergens: list[str] = Field(default_factory=list)
-    diet: Optional[str] = None
 
 
 class Token(BaseModel):

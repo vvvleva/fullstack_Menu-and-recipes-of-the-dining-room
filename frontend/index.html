@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Столовая</title>
+    <title>Столовая #2049</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
@@ -12,7 +12,12 @@
         <header class="header">
             <div class="header-content">
                 <div class="logo">
-                    <span class="logo-text">СТОЛОВАЯ</span>
+                    <span class="logo-text">СТОЛОВАЯ #2049</span>
+                </div>
+                <div class="nav-links">
+                    <a href="/" class="nav-link" onclick="showSection('main')">Главная</a>
+                    <a href="/register.html" class="nav-link">Регистрация</a>
+                    <a href="#" class="nav-link" onclick="showLoginForm()">Вход</a>
                 </div>
                 <div class="server-status" id="serverStatus">
                     <span class="status-indicator"></span>
@@ -22,239 +27,217 @@
         </header>
 
         <main class="main">
-
-            <!-- Карусель с карточками -->
-            <div class="carousel-section">
-                <div class="section-header">
-                    <h2>Ключевые экраны</h2>
+            <!-- Форма входа (скрыта по умолчанию) -->
+            <div id="loginForm" class="login-form" style="display: none;">
+                <div class="login-card">
+                    <h2>Вход в систему</h2>
+                    <form onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="loginEmail" required placeholder="email@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Пароль</label>
+                            <input type="password" id="loginPassword" required>
+                        </div>
+                        <button type="submit" class="login-button">Войти</button>
+                        <button type="button" class="cancel-button" onclick="hideLoginForm()">Отмена</button>
+                    </form>
                 </div>
-                
-                <div class="carousel-container">
-                    <button class="carousel-arrow carousel-arrow-left" onclick="prevSlide()" aria-label="Предыдущий слайд">
-                        ←
-                    </button>
+            </div>
+
+            <!-- Основной контент -->
+            <div id="mainContent">
+                <!-- Информация о пользователе -->
+                <div id="userInfo" class="user-info" style="display: none;">
+                    <div class="user-info-content">
+                        <span id="userName"></span>
+                        <button onclick="logout()" class="logout-btn">Выйти</button>
+                    </div>
+                </div>
+
+                <!-- Карусель с карточками -->
+                <div class="carousel-section">
+                    <div class="section-header">
+                        <h2>Ключевые экраны</h2>
+                    </div>
                     
-                    <div class="carousel-viewport">
-                        <div class="carousel-track" id="carouselTrack">
-                            <!-- Слайд 1: Меню -->
-                            <div class="card active">
-                                <div class="card-header">
-                                    <h3>Меню на сегодня</h3>
-                                    <span class="badge">основной</span>
-                                </div>
-                                <div class="card-content">
-                                    <div id="menuList" class="menu-list">
-                                        <!-- Список блюд подгружается из /api/menu -->
+                    <div class="carousel-container">
+                        <button class="carousel-arrow carousel-arrow-left" onclick="prevSlide()">
+                            ←
+                        </button>
+                        
+                        <div class="carousel-viewport">
+                            <div class="carousel-track" id="carouselTrack">
+                                <div class="card active">
+                                    <div class="card-header">
+                                        <h3>Меню на сегодня</h3>
+                                        <span class="badge">основной</span>
+                                    </div>
+                                    <div class="card-content">
+                                        <div id="menuList" class="menu-list">
+                                            <!-- Список блюд загружается из API -->
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Слайд 2: Детали блюда (ИСПРАВЛЕНО) -->
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 id="dishTitle">Выберите блюдо</h3>
-                                    <span class="badge">детали</span>
-                                </div>
-                                <div class="card-content">
-                                    <div class="dish-details">
-                                        <div class="dish-image">
-                                            <div class="image-placeholder">
-                                                <!-- Изображение будет загружено динамически -->
-                                            </div>
-                                        </div>
-                                        
-                                        <div id="aiBlock" class="ai-analysis">
-                                            <div id="aiTitle" class="ai-title">Анализ аллергенов</div>
-                                            <div id="aiMessage" class="allergen-block">Выберите блюдо для анализа</div>
-                                        </div>
-                                        
-                                        <div class="ingredients">
-                                            <div class="ingredients-title">Состав</div>
-                                            <ul id="ingredientsList" class="ingredients-list">
-                                                <!-- Состав будет загружен динамически -->
-                                            </ul>
-                                        </div>
-                                        
-                                        <div class="dish-footer">
-                                            <div id="dishMeta" class="dish-meta">—</div>
-                                            <div class="dish-actions">
-                                                <span id="dishPrice" class="price">—</span>
-                                                <div class="quantity-controls">
-                                                    <button class="quantity-btn" aria-label="Уменьшить количество">−</button>
-                                                    <span class="quantity">1</span>
-                                                    <button class="quantity-btn" aria-label="Увеличить количество">+</button>
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3 id="dishTitle">Выберите блюдо</h3>
+                                        <span class="badge">детали</span>
+                                    </div>
+                                    <div class="card-content">
+                                        <div class="dish-details">
+                                            <div class="dish-image">
+                                                <div class="image-placeholder">
+                                                    Изображение блюда
                                                 </div>
-                                                <button class="add-btn">Добавить в корзину</button>
+                                            </div>
+                                            
+                                            <div id="aiBlock" class="ai-analysis">
+                                                <div id="aiTitle" class="ai-title">Анализ аллергенов</div>
+                                                <div id="aiMessage" class="allergen-block">Выберите блюдо для анализа</div>
+                                            </div>
+                                            
+                                            <div class="ingredients">
+                                                <div class="ingredients-title">Состав</div>
+                                                <ul id="ingredientsList" class="ingredients-list">
+                                                </ul>
+                                            </div>
+                                            
+                                            <div class="dish-footer">
+                                                <div id="dishMeta" class="dish-meta"></div>
+                                                <div class="dish-actions">
+                                                    <span id="dishPrice" class="price"></span>
+                                                    <div class="quantity-controls">
+                                                        <button class="quantity-btn" onclick="decreaseQuantity()">−</button>
+                                                        <span class="quantity" id="dishQuantity">1</span>
+                                                        <button class="quantity-btn" onclick="increaseQuantity()">+</button>
+                                                    </div>
+                                                    <button class="add-btn" onclick="addToCart()">Добавить в корзину</button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Слайд 3: Профиль -->
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3>Профиль пользователя</h3>
-                                    <span class="badge">настройки</span>
-                                </div>
-                                <div class="card-content">
-                                    <div class="profile">
-                                        <div class="profile-header">
-                                            <div class="avatar">АН</div>
-                                            <div class="profile-info">
-                                                <div class="profile-name">Анна</div>
-                                                <div class="profile-email">anna@mail.com</div>
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3>Профиль пользователя</h3>
+                                        <span class="badge">настройки</span>
+                                    </div>
+                                    <div class="card-content">
+                                        <div class="profile">
+                                            <div class="profile-header">
+                                                <div class="avatar" id="profileAvatar">Г</div>
+                                                <div class="profile-info">
+                                                    <div class="profile-name" id="profileName">Гость</div>
+                                                    <div class="profile-email" id="profileEmail">не авторизован</div>
+                                                </div>
                                             </div>
-                                        </div>
-                                        
-                                        <div class="profile-section">
-                                            <div class="section-title">Аллергены</div>
-                                            <div class="options-group">
-                                                <label class="option">
-                                                    <input type="checkbox" checked> Орехи
-                                                </label>
-                                                <label class="option">
-                                                    <input type="checkbox"> Лактоза
-                                                </label>
-                                                <label class="option">
-                                                    <input type="checkbox" checked> Глютен
-                                                </label>
-                                                <label class="option">
-                                                    <input type="checkbox"> Морепродукты
-                                                </label>
+                                            
+                                            <div class="profile-section">
+                                                <div class="section-title">Аллергены</div>
+                                                <div class="options-group" id="allergensList">
+                                                    <label class="option">
+                                                        <input type="checkbox" value="орехи"> Орехи
+                                                    </label>
+                                                    <label class="option">
+                                                        <input type="checkbox" value="лактоза"> Лактоза
+                                                    </label>
+                                                    <label class="option">
+                                                        <input type="checkbox" value="глютен"> Глютен
+                                                    </label>
+                                                    <label class="option">
+                                                        <input type="checkbox" value="морепродукты"> Морепродукты
+                                                    </label>
+                                                </div>
                                             </div>
-                                        </div>
-                                        
-                                        <div class="profile-section">
-                                            <div class="section-title">Диета</div>
-                                            <div class="options-group">
-                                                <label class="option">
-                                                    <input type="radio" name="diet"> Нет ограничений
-                                                </label>
-                                                <label class="option">
-                                                    <input type="radio" name="diet"> Веган
-                                                </label>
-                                                <label class="option">
-                                                    <input type="radio" name="diet" checked> Безглютеновая
-                                                </label>
-                                                <label class="option">
-                                                    <input type="radio" name="diet"> Кето
-                                                </label>
+                                            
+                                            <div class="profile-section">
+                                                <div class="section-title">Диета</div>
+                                                <div class="options-group">
+                                                    <label class="option">
+                                                        <input type="radio" name="diet" value=""> Нет ограничений
+                                                    </label>
+                                                    <label class="option">
+                                                        <input type="radio" name="diet" value="веган"> Веган
+                                                    </label>
+                                                    <label class="option">
+                                                        <input type="radio" name="diet" value="безглютеновая"> Безглютеновая
+                                                    </label>
+                                                </div>
                                             </div>
+                                            
+                                            <button class="save-btn" onclick="saveProfile()">Сохранить</button>
                                         </div>
-                                        
-                                        <button class="save-btn">Сохранить</button>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Слайд 4: Сценарии -->
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3>Пользовательские сценарии</h3>
-                                    <span class="badge">юзер-флоу</span>
-                                </div>
-                                <div class="card-content">
-                                    <div class="scenarios">
-                                        <div class="scenario">
-                                            <div class="scenario-user">
-                                                <strong>Анна</strong> (аллергия на орехи)
-                                            </div>
-                                            <ol class="scenario-steps">
-                                                <li>Открывает приложение в 10:00</li>
-                                                <li>Видит предупреждение у Цезаря</li>
-                                                <li>Выбирает безопасный салат</li>
-                                                <li>Добавляет в корзину</li>
-                                                <li>Подтверждает заказ</li>
-                                            </ol>
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3>Корзина</h3>
+                                        <span class="badge">заказы</span>
+                                    </div>
+                                    <div class="card-content">
+                                        <div id="cartItems" class="cart-items">
+                                            <!-- Содержимое корзины -->
                                         </div>
-                                        
-                                        <div class="scenario">
-                                            <div class="scenario-user">
-                                                <strong>Николай</strong> (администратор)
-                                            </div>
-                                            <ol class="scenario-steps">
-                                                <li>Создаёт блюдо "Тыквенный суп"</li>
-                                                <li>Вводит ингредиенты</li>
-                                                <li>AI определяет аллергены</li>
-                                                <li>Публикует с тегами</li>
-                                            </ol>
-                                        </div>
+                                        <div class="cart-total" id="cartTotal"></div>
+                                        <button class="checkout-btn" onclick="checkout()">Оформить заказ</button>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        
+                        <button class="carousel-arrow carousel-arrow-right" onclick="nextSlide()">
+                            →
+                        </button>
                     </div>
                     
-                    <button class="carousel-arrow carousel-arrow-right" onclick="nextSlide()" aria-label="Следующий слайд">
-                        →
-                    </button>
+                    <div class="carousel-dots" id="carouselDots">
+                        <span class="dot active" onclick="goToSlide(0)"></span>
+                        <span class="dot" onclick="goToSlide(1)"></span>
+                        <span class="dot" onclick="goToSlide(2)"></span>
+                        <span class="dot" onclick="goToSlide(3)"></span>
+                    </div>
                 </div>
-                
-                <div class="carousel-dots" id="carouselDots">
-                    <span class="dot active" onclick="goToSlide(0)"></span>
-                    <span class="dot" onclick="goToSlide(1)"></span>
-                    <span class="dot" onclick="goToSlide(2)"></span>
-                    <span class="dot" onclick="goToSlide(3)"></span>
-                </div>
-            </div>
 
-            <!-- SPA -->
-            <section class="spa-section">
-                <div class="section-header">
-                    <h2>SPA на React</h2>
-                    <p class="section-subtitle">Клиентская маршрутизация с React Router</p>
-                </div>
-                <div id="spa-root"></div>
-            </section>
-
-            <!-- API тестер -->
-            <div class="api-section">
-                <h2>Тестирование API</h2>
-                
-                <div class="api-controls">
-                    <button class="api-btn" onclick="testAPI('menu')">
-                        <span class="method">GET</span> /api/menu
-                    </button>
-                    <button class="api-btn" onclick="testAPI('health')">
-                        <span class="method">GET</span> /health
-                    </button>
-                    <button class="api-btn" onclick="testAPI('menu/category/салаты')">
-                        <span class="method">GET</span> /api/menu/category/салаты
-                    </button>
-                    <button class="api-btn" onclick="testAI()">
-                        <span class="method">AI</span> Анализ аллергенов
-                    </button>
-                    <button class="api-btn" onclick="testCreate()">
-                        <span class="method">POST</span> Создать блюдо
-                    </button>
-                    <button class="api-btn" onclick="testUpdate()">
-                        <span class="method">PUT</span> Обновить блюдо
-                    </button>
-                    <button class="api-btn" onclick="testDelete()">
-                        <span class="method">DELETE</span> Удалить блюдо
-                    </button>
-                </div>
-                
-                <div class="api-response" id="apiResponse">
-                    <pre>Нажмите на кнопку для отправки запроса</pre>
+                <!-- API тестер -->
+                <div class="api-section">
+                    <h2>Тестирование API</h2>
+                    
+                    <div class="api-controls">
+                        <button class="api-btn" onclick="testAPI('menu')">
+                            <span class="method">GET</span> /api/menu
+                        </button>
+                        <button class="api-btn" onclick="testAPI('health')">
+                            <span class="method">GET</span> /health
+                        </button>
+                        <button class="api-btn" onclick="testAI()">
+                            <span class="method">AI</span> Анализ аллергенов
+                        </button>
+                        <button class="api-btn" onclick="testCreate()">
+                            <span class="method">POST</span> Создать блюдо
+                        </button>
+                    </div>
+                    
+                    <div class="api-response" id="apiResponse">
+                        <pre>Нажмите на кнопку для отправки запроса</pre>
+                    </div>
                 </div>
             </div>
         </main>
 
         <footer class="footer">
             <div class="footer-content">
-                <span>Столовая </span>
-                <span class="cursor">_</span>
+                <span>Столовая #2049</span>
             </div>
         </footer>
     </div>
 
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-router-dom@6/umd/react-router-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script type="text/babel" src="app.jsx"></script>
+    <div id="notification-container"></div>
+
     <script src="script.js"></script>
 </body>
 </html>

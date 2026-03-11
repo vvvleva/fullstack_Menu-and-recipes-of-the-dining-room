@@ -76,7 +76,6 @@ class RedisCache:
             self.client.delete(key)
 
 
-# Выбираем реализацию кэша
 Cache = RedisCache if REDIS_AVAILABLE else MemoryCache
 cache = Cache()
 
@@ -86,18 +85,15 @@ def cached(ttl_seconds: int = 300):
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            # Создаем ключ кэша на основе имени функции и аргументов
             key_parts = [func.__name__]
             key_parts.extend(str(arg) for arg in args)
             key_parts.extend(f"{k}:{v}" for k, v in sorted(kwargs.items()))
             cache_key = hashlib.md5(":".join(key_parts).encode()).hexdigest()
             
-            # Пытаемся получить из кэша
             cached_result = cache.get(cache_key)
             if cached_result is not None:
                 return cached_result
             
-            # Выполняем функцию и кэшируем результат
             result = await func(*args, **kwargs)
             cache.set(cache_key, result)
             return result

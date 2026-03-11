@@ -9,7 +9,6 @@ from routes.auth import get_current_user
 from models.schemas import UserPublic
 
 
-# OAuth2 схемы
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=True)
 
 class OAuth2PasswordBearerOptional(OAuth2PasswordBearer):
@@ -24,12 +23,7 @@ oauth2_scheme_optional = OAuth2PasswordBearerOptional(tokenUrl="/api/auth/login"
 
 
 async def get_current_admin(current_user: UserPublic = Depends(get_current_user)) -> UserPublic:
-    """
-    Проверка, что текущий пользователь является администратором.
-    
-    Администраторы имеют поле role = "admin" в базе данных.
-    """
-    # Получаем полную запись пользователя из БД
+    """Проверка, что текущий пользователь является администратором."""
     from core.db import get_user_by_email
     user_record = get_user_by_email(current_user.email)
     
@@ -46,15 +40,11 @@ async def get_current_admin(current_user: UserPublic = Depends(get_current_user)
 
 
 async def get_current_user_optional(token: Optional[str] = Depends(oauth2_scheme_optional)) -> Optional[UserPublic]:
-    """
-    Опциональное получение текущего пользователя.
-    Не вызывает ошибку, если пользователь не авторизован.
-    """
+    """Опциональное получение текущего пользователя."""
     if not token:
         return None
     
     try:
-        # Используем существующую функцию get_current_user, передавая ей токен
         from routes.auth import get_current_user as get_user
         return await get_user(token)
     except HTTPException:
@@ -64,29 +54,21 @@ async def get_current_user_optional(token: Optional[str] = Depends(oauth2_scheme
 
 
 async def check_dish_ownership(dish_id: int, current_user: UserPublic = Depends(get_current_user)) -> bool:
-    """
-    Проверка прав на редактирование блюда.
-    Сейчас только админы могут редактировать.
-    """
+    """Проверка прав на редактирование блюда."""
     from core.db import get_user_by_email
     user_record = get_user_by_email(current_user.email)
     return user_record and user_record.get("role") == "admin"
 
 
 async def get_user_allergens(current_user: Optional[UserPublic] = Depends(get_current_user_optional)) -> list:
-    """
-    Получить список аллергенов текущего пользователя.
-    Для неавторизованных возвращает пустой список.
-    """
+    """Получить список аллергенов текущего пользователя."""
     if not current_user:
         return []
     return current_user.allergens
 
 
 def require_allergens(allergens: list):
-    """
-    Декоратор для проверки наличия определенных аллергенов у пользователя.
-    """
+    """Декоратор для проверки наличия определенных аллергенов у пользователя."""
     async def dependency(current_user: UserPublic = Depends(get_current_user)):
         user_allergens = set(current_user.allergens)
         required_allergens = set(allergens)

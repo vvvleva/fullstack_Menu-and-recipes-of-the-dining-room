@@ -7,12 +7,12 @@ from enum import Enum
 
 class OrderStatus(str, Enum):
     """Статусы заказа."""
-    PENDING = "pending"  # Ожидает подтверждения
-    CONFIRMED = "confirmed"  # Подтвержден
-    PREPARING = "preparing"  # Готовится
-    READY = "ready"  # Готов к выдаче
-    COMPLETED = "completed"  # Выполнен
-    CANCELLED = "cancelled"  # Отменен
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    PREPARING = "preparing"
+    READY = "ready"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
 
 
 class OrderItemBase(BaseModel):

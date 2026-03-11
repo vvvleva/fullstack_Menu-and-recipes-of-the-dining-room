@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - Столовая #2049</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="register.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-text">СТОЛОВАЯ #2049</span>
+                </div>
+                <div class="nav-links">
+                    <a href="/" class="nav-link">Главная</a>
+                    <a href="/register.html" class="nav-link active">Регистрация</a>
+                </div>
+                <div class="server-status" id="serverStatus">
+                    <span class="status-indicator"></span>
+                    <span class="status-text">Проверка подключения...</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="register-container">
+                <div class="register-card">
+                    <h1 class="register-title">Регистрация</h1>
+                    <p class="register-subtitle">Создайте аккаунт для персонализированного подбора блюд</p>
+                    
+                    <form id="registerForm" class="register-form" onsubmit="handleRegister(event)">
+                        <div class="form-group">
+                            <label for="fullName" class="form-label">Полное имя</label>
+                            <input type="text" id="fullName" name="fullName" class="form-input" required placeholder="Иван Петров">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" id="email" name="email" class="form-input" required placeholder

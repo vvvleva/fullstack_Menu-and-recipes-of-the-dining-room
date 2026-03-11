@@ -11,7 +11,6 @@ from core.logging import structured_logger
 class OrderService:
     """Сервис для управления заказами."""
     
-    # Время приготовления в минутах для разных категорий
     PREPARATION_TIME = {
         "салаты": 10,
         "супы": 15,
@@ -30,7 +29,6 @@ class OrderService:
         
         Проверяет доступность блюд, рассчитывает стоимость и время приготовления.
         """
-        # Проверяем все блюда
         items_with_details = []
         total_price = 0
         max_preparation_time = 0
@@ -58,7 +56,6 @@ class OrderService:
                     }
                 )
             
-            # Рассчитываем стоимость позиции
             subtotal = dish["price"] * item.quantity
             
             items_with_details.append({
@@ -73,14 +70,11 @@ class OrderService:
             
             total_price += subtotal
             
-            # Определяем максимальное время приготовления
             prep_time = self.PREPARATION_TIME.get(dish["category"], 15)
             max_preparation_time = max(max_preparation_time, prep_time)
         
-        # Рассчитываем ориентировочное время готовности
         estimated_ready_time = datetime.utcnow() + timedelta(minutes=max_preparation_time)
         
-        # Сохраняем заказ в БД
         with get_connection() as conn:
             cur = conn.execute(
                 """
@@ -102,7 +96,6 @@ class OrderService:
             )
             order_id = cur.lastrowid
             
-            # Сохраняем позиции заказа
             for item in items_with_details:
                 conn.execute(
                     """
@@ -123,7 +116,6 @@ class OrderService:
                     )
                 )
             
-            # Получаем созданный заказ
             order_row = conn.execute(
                 "SELECT * FROM orders WHERE id = ?",
                 (order_id,)
@@ -134,7 +126,6 @@ class OrderService:
                 (order_id,)
             ).fetchall()
         
-        # Логируем создание заказа
         self.logger.log_order_event(
             order_id=order_id,
             user_id=user_id,
@@ -209,7 +200,6 @@ class OrderService:
         Администраторы могут менять любой статус.
         """
         with get_connection() as conn:
-            # Проверяем существование заказа
             order_row = conn.execute(
                 "SELECT * FROM orders WHERE id = ?",
                 (order_id,)
@@ -218,7 +208,6 @@ class OrderService:
             if not order_row:
                 return None
             
-            # Проверяем права
             if not is_admin and order_row["user_id"] != user_id:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -228,7 +217,6 @@ class OrderService:
                     }
                 )
             
-            # Обычные пользователи могут только отменять свои заказы
             if not is_admin and status != OrderStatus.CANCELLED:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -238,7 +226,6 @@ class OrderService:
                     }
                 )
             
-            # Обновляем статус
             update_fields = ["status = ?"]
             params = [status]
             
@@ -253,7 +240,6 @@ class OrderService:
                 tuple(params)
             )
             
-            # Получаем обновленный заказ
             items_rows = conn.execute(
                 "SELECT * FROM order_items WHERE order_id = ?",
                 (order_id,)
@@ -261,7 +247,6 @@ class OrderService:
             
             updated_order = self._row_to_order(order_row, items_rows)
         
-        # Логируем изменение статуса
         self.logger.log_order_event(
             order_id=order_id,
             user_id=user_id,
@@ -303,5 +288,4 @@ class OrderService:
         }
 
 
-# Создаем глобальный экземпляр сервиса
 order_service = OrderService()

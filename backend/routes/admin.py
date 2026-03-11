@@ -17,18 +17,14 @@ router = APIRouter(prefix="/api/admin", tags=["Администрировани�
 async def get_system_stats(current_admin = Depends(get_current_admin)):
     """Получить статистику по системе (только для админов)."""
     with get_connection() as conn:
-        # Количество пользователей
         users_count = conn.execute("SELECT COUNT(*) as count FROM users").fetchone()["count"]
         
-        # Количество блюд
         dishes_count = conn.execute("SELECT COUNT(*) as count FROM dishes").fetchone()["count"]
         
-        # Количество доступных блюд
         available_dishes = conn.execute(
             "SELECT COUNT(*) as count FROM dishes WHERE available = 1"
         ).fetchone()["count"]
         
-        # Статистика заказов за сегодня
         today = datetime.now().date()
         orders_today = conn.execute(
             """
@@ -40,7 +36,6 @@ async def get_system_stats(current_admin = Depends(get_current_admin)):
             (today.isoformat(),)
         ).fetchone()
         
-        # Статистика по статусам заказов
         orders_by_status = conn.execute(
             """
             SELECT status, COUNT(*) as count 
@@ -49,7 +44,6 @@ async def get_system_stats(current_admin = Depends(get_current_admin)):
             """
         ).fetchall()
         
-        # Популярные блюда
         popular_dishes = conn.execute(
             """
             SELECT dish_name, SUM(quantity) as total_ordered
@@ -126,7 +120,6 @@ async def make_user_admin(
 ):
     """Сделать пользователя администратором."""
     with get_connection() as conn:
-        # Проверяем существование пользователя
         user = conn.execute(
             "SELECT id, email FROM users WHERE id = ?",
             (user_id,)
@@ -138,13 +131,11 @@ async def make_user_admin(
                 detail={"code": "USER_NOT_FOUND", "message": "Пользователь не найден"}
             )
         
-        # Обновляем роль
         conn.execute(
             "UPDATE users SET role = 'admin' WHERE id = ?",
             (user_id,)
         )
         
-        # Логируем действие
         structured_logger.log_order_event(
             order_id=0,
             user_id=current_admin.id,
@@ -163,11 +154,7 @@ async def get_low_stock_dishes(
     threshold: int = 5,
     current_admin = Depends(get_current_admin)
 ):
-    """
-    Получить блюда с низким остатком.
-    TODO: Добавить поле stock в таблицу dishes
-    """
-    # Заглушка для будущей функциональности
+    """Получить блюда с низким остатком."""
     return {
         "status": "success",
         "message": "Функциональность в разработке",

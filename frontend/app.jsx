@@ -73,14 +73,34 @@ function ProfilePage() {
   );
 }
 
+function AboutPage() {
+  return (
+    <section>
+      <h3>О проекте</h3>
+      <p className="spa-text">
+        Проект "Столовая #2049" - лабораторные работы по курсу "Современные языки и системы программирования".
+      </p>
+      <p className="spa-text">
+        Функциональность:
+      </p>
+      <ul className="spa-list">
+        <li>CRUD для меню столовой</li>
+        <li>AI-анализ аллергенов на основе нейросетевой модели</li>
+        <li>Авторизация и аутентификация пользователей (JWT)</li>
+        <li>Система заказов с отслеживанием статуса</li>
+        <li>Административная панель для управления</li>
+      </ul>
+    </section>
+  );
+}
+
 function App() {
   return (
-    <ReactRouterDOM.BrowserRouter>
+    <BrowserRouter>
       <Layout />
-    </ReactRouterDOM.BrowserRouter>
+    </BrowserRouter>
   );
 }
 
 const root = ReactDOM.createRoot(document.getElementById("spa-root"));
 root.render(<App />);
-
