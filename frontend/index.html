@@ -5,19 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Столовая #2049</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="app">
         <header class="header">
             <div class="header-content">
                 <div class="logo">
+                    <i class="fas fa-utensils"></i>
                     <span class="logo-text">СТОЛОВАЯ #2049</span>
                 </div>
                 <div class="nav-links">
-                    <a href="/" class="nav-link" onclick="showSection('main')">Главная</a>
-                    <a href="/register.html" class="nav-link">Регистрация</a>
-                    <a href="#" class="nav-link" onclick="showLoginForm()">Вход</a>
+                    <a href="/" class="nav-link active" onclick="return navigateToHome(event)">
+                        <i class="fas fa-home"></i> Главная
+                    </a>
+                    <a href="/register.html" class="nav-link">
+                        <i class="fas fa-user-plus"></i> Регистрация
+                    </a>
+                    <a href="#" class="nav-link" onclick="showLoginModal()">
+                        <i class="fas fa-sign-in-alt"></i> Вход
+                    </a>
                 </div>
                 <div class="server-status" id="serverStatus">
                     <span class="status-indicator"></span>
@@ -27,82 +35,168 @@
         </header>
 
         <main class="main">
-            <!-- Форма входа (скрыта по умолчанию) -->
-            <div id="loginForm" class="login-form" style="display: none;">
-                <div class="login-card">
-                    <h2>Вход в систему</h2>
-                    <form onsubmit="handleLogin(event)">
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" id="loginEmail" required placeholder="email@example.com">
-                        </div>
-                        <div class="form-group">
-                            <label>Пароль</label>
-                            <input type="password" id="loginPassword" required>
-                        </div>
-                        <button type="submit" class="login-button">Войти</button>
-                        <button type="button" class="cancel-button" onclick="hideLoginForm()">Отмена</button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Основной контент -->
             <div id="mainContent">
-                <!-- Информация о пользователе -->
                 <div id="userInfo" class="user-info" style="display: none;">
                     <div class="user-info-content">
-                        <span id="userName"></span>
-                        <button onclick="logout()" class="logout-btn">Выйти</button>
+                        <div class="user-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <span id="userName" class="user-name"></span>
+                        <span id="userRole" class="user-role"></span>
+                        <button onclick="logout()" class="logout-btn">
+                            <i class="fas fa-sign-out-alt"></i> Выйти
+                        </button>
                     </div>
                 </div>
 
-                <!-- Карусель с карточками -->
+                <!-- Модальное окно входа -->
+                <div id="loginModal" class="modal">
+                    <div class="modal-content">
+                        <span class="close" onclick="closeLoginModal()">&times;</span>
+                        <h2><i class="fas fa-sign-in-alt"></i> Вход в аккаунт</h2>
+                        <form id="loginForm" onsubmit="handleLogin(event)">
+                            <div class="form-group">
+                                <label><i class="fas fa-envelope"></i> Email</label>
+                                <input type="email" id="loginEmail" placeholder="email@example.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-lock"></i> Пароль</label>
+                                <input type="password" id="loginPassword" placeholder="••••••••" required>
+                            </div>
+                            <button type="submit" class="login-btn">
+                                <i class="fas fa-sign-in-alt"></i> Войти
+                            </button>
+                        </form>
+                        <p class="modal-footer">
+                            Нет аккаунта? <a href="/register.html">Зарегистрируйтесь</a>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Модальное окно добавления блюда (для админа) -->
+                <div id="addDishModal" class="modal">
+                    <div class="modal-content wide">
+                        <span class="close" onclick="closeAddDishModal()">&times;</span>
+                        <h2><i class="fas fa-plus-circle"></i> Добавить новое блюдо</h2>
+                        <form id="addDishForm" onsubmit="handleAddDish(event)">
+                            <div class="admin-form">
+                                <div class="form-group">
+                                    <label>Название блюда</label>
+                                    <input type="text" id="dishName" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Цена (₽)</label>
+                                    <input type="number" id="dishPrice" min="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Вес (г)</label>
+                                    <input type="number" id="dishWeight" min="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Категория</label>
+                                    <select id="dishCategory" required>
+                                        <option value="салаты">Салаты</option>
+                                        <option value="супы">Супы</option>
+                                        <option value="горячее">Горячее</option>
+                                        <option value="гарниры">Гарниры</option>
+                                        <option value="напитки">Напитки</option>
+                                        <option value="десерты">Десерты</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Калории</label>
+                                    <input type="number" id="dishCalories" min="0" required>
+                                </div>
+                                <div class="form-group full-width">
+                                    <label>Ингредиенты (через запятую)</label>
+                                    <input type="text" id="dishIngredients" placeholder="курица, салат, соус" required>
+                                </div>
+                                <div class="form-group full-width">
+                                    <label>Аллергены</label>
+                                    <div class="checkbox-group" id="allergenCheckboxes">
+                                        <label><input type="checkbox" value="орехи"> Орехи</label>
+                                        <label><input type="checkbox" value="арахис"> Арахис</label>
+                                        <label><input type="checkbox" value="лактоза"> Лактоза</label>
+                                        <label><input type="checkbox" value="глютен"> Глютен</label>
+                                        <label><input type="checkbox" value="морепродукты"> Морепродукты</label>
+                                        <label><input type="checkbox" value="яйца"> Яйца</label>
+                                        <label><input type="checkbox" value="соя"> Соя</label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="dishAvailable" checked> Доступно для заказа
+                                    </label>
+                                </div>
+                                <button type="submit" class="admin-submit-btn">
+                                    <i class="fas fa-plus-circle"></i> Добавить блюдо
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="hero-section">
+                    <h1 class="hero-title">Добро пожаловать в столовую #2049</h1>
+                    <p class="hero-subtitle">Вкусная и безопасная еда с учетом ваших предпочтений</p>
+                </div>
+
                 <div class="carousel-section">
                     <div class="section-header">
-                        <h2>Ключевые экраны</h2>
+                        <h2><i class="fas fa-chevron-circle-right"></i> Меню столовой</h2>
+                        <button id="adminAddBtn" class="api-btn" style="display: none;" onclick="showAddDishModal()">
+                            <i class="fas fa-plus-circle"></i> Добавить блюдо
+                        </button>
                     </div>
                     
                     <div class="carousel-container">
                         <button class="carousel-arrow carousel-arrow-left" onclick="prevSlide()">
-                            ←
+                            <i class="fas fa-chevron-left"></i>
                         </button>
                         
                         <div class="carousel-viewport">
                             <div class="carousel-track" id="carouselTrack">
+                                <!-- Слайд 1: Меню -->
                                 <div class="card active">
                                     <div class="card-header">
-                                        <h3>Меню на сегодня</h3>
-                                        <span class="badge">основной</span>
+                                        <h3><i class="fas fa-list"></i> Меню на сегодня</h3>
+                                        <span class="badge">блюда</span>
                                     </div>
                                     <div class="card-content">
                                         <div id="menuList" class="menu-list">
-                                            <!-- Список блюд загружается из API -->
+                                            <div class="loading-spinner">
+                                                <i class="fas fa-spinner fa-spin"></i> Загрузка...
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
+                                <!-- Слайд 2: Детали блюда -->
                                 <div class="card">
                                     <div class="card-header">
-                                        <h3 id="dishTitle">Выберите блюдо</h3>
+                                        <h3 id="dishTitle"><i class="fas fa-info-circle"></i> Выберите блюдо</h3>
                                         <span class="badge">детали</span>
                                     </div>
                                     <div class="card-content">
                                         <div class="dish-details">
                                             <div class="dish-image">
                                                 <div class="image-placeholder">
-                                                    Изображение блюда
+                                                    <i class="fas fa-image"></i>
                                                 </div>
                                             </div>
                                             
                                             <div id="aiBlock" class="ai-analysis">
-                                                <div id="aiTitle" class="ai-title">Анализ аллергенов</div>
+                                                <div id="aiTitle" class="ai-title">
+                                                    <i class="fas fa-microchip"></i> Анализ аллергенов
+                                                </div>
                                                 <div id="aiMessage" class="allergen-block">Выберите блюдо для анализа</div>
                                             </div>
                                             
                                             <div class="ingredients">
-                                                <div class="ingredients-title">Состав</div>
-                                                <ul id="ingredientsList" class="ingredients-list">
-                                                </ul>
+                                                <div class="ingredients-title">
+                                                    <i class="fas fa-blender"></i> Состав
+                                                </div>
+                                                <ul id="ingredientsList" class="ingredients-list"></ul>
                                             </div>
                                             
                                             <div class="dish-footer">
@@ -110,88 +204,55 @@
                                                 <div class="dish-actions">
                                                     <span id="dishPrice" class="price"></span>
                                                     <div class="quantity-controls">
-                                                        <button class="quantity-btn" onclick="decreaseQuantity()">−</button>
+                                                        <button class="quantity-btn" onclick="decreaseQuantity()">
+                                                            <i class="fas fa-minus"></i>
+                                                        </button>
                                                         <span class="quantity" id="dishQuantity">1</span>
-                                                        <button class="quantity-btn" onclick="increaseQuantity()">+</button>
+                                                        <button class="quantity-btn" onclick="increaseQuantity()">
+                                                            <i class="fas fa-plus"></i>
+                                                        </button>
                                                     </div>
-                                                    <button class="add-btn" onclick="addToCart()">Добавить в корзину</button>
+                                                    <button class="add-btn" onclick="addToCart()">
+                                                        <i class="fas fa-shopping-cart"></i> В корзину
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
+                                <!-- Слайд 3: Корзина -->
                                 <div class="card">
                                     <div class="card-header">
-                                        <h3>Профиль пользователя</h3>
-                                        <span class="badge">настройки</span>
+                                        <h3><i class="fas fa-shopping-basket"></i> Корзина</h3>
+                                        <span class="badge">заказ</span>
                                     </div>
                                     <div class="card-content">
-                                        <div class="profile">
-                                            <div class="profile-header">
-                                                <div class="avatar" id="profileAvatar">Г</div>
-                                                <div class="profile-info">
-                                                    <div class="profile-name" id="profileName">Гость</div>
-                                                    <div class="profile-email" id="profileEmail">не авторизован</div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="profile-section">
-                                                <div class="section-title">Аллергены</div>
-                                                <div class="options-group" id="allergensList">
-                                                    <label class="option">
-                                                        <input type="checkbox" value="орехи"> Орехи
-                                                    </label>
-                                                    <label class="option">
-                                                        <input type="checkbox" value="лактоза"> Лактоза
-                                                    </label>
-                                                    <label class="option">
-                                                        <input type="checkbox" value="глютен"> Глютен
-                                                    </label>
-                                                    <label class="option">
-                                                        <input type="checkbox" value="морепродукты"> Морепродукты
-                                                    </label>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="profile-section">
-                                                <div class="section-title">Диета</div>
-                                                <div class="options-group">
-                                                    <label class="option">
-                                                        <input type="radio" name="diet" value=""> Нет ограничений
-                                                    </label>
-                                                    <label class="option">
-                                                        <input type="radio" name="diet" value="веган"> Веган
-                                                    </label>
-                                                    <label class="option">
-                                                        <input type="radio" name="diet" value="безглютеновая"> Безглютеновая
-                                                    </label>
-                                                </div>
-                                            </div>
-                                            
-                                            <button class="save-btn" onclick="saveProfile()">Сохранить</button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h3>Корзина</h3>
-                                        <span class="badge">заказы</span>
-                                    </div>
-                                    <div class="card-content">
-                                        <div id="cartItems" class="cart-items">
-                                            <!-- Содержимое корзины -->
-                                        </div>
+                                        <div id="cartItems" class="cart-items"></div>
                                         <div class="cart-total" id="cartTotal"></div>
-                                        <button class="checkout-btn" onclick="checkout()">Оформить заказ</button>
+                                        <button class="checkout-btn" onclick="checkout()">
+                                            <i class="fas fa-check-circle"></i> Оформить заказ
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Слайд 4: Личный кабинет -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3><i class="fas fa-user"></i> Личный кабинет</h3>
+                                        <span class="badge">профиль</span>
+                                    </div>
+                                    <div class="card-content" id="profileCard">
+                                        <div class="loading-spinner">
+                                            <i class="fas fa-spinner fa-spin"></i> Загрузка...
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
                         <button class="carousel-arrow carousel-arrow-right" onclick="nextSlide()">
-                            →
+                            <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
                     
@@ -205,25 +266,20 @@
 
                 <!-- API тестер -->
                 <div class="api-section">
-                    <h2>Тестирование API</h2>
-                    
+                    <h2><i class="fas fa-code"></i> Тестирование API</h2>
                     <div class="api-controls">
                         <button class="api-btn" onclick="testAPI('menu')">
-                            <span class="method">GET</span> /api/menu
+                            <span class="method get">GET</span> /api/menu
                         </button>
                         <button class="api-btn" onclick="testAPI('health')">
-                            <span class="method">GET</span> /health
+                            <span class="method get">GET</span> /health
                         </button>
                         <button class="api-btn" onclick="testAI()">
-                            <span class="method">AI</span> Анализ аллергенов
-                        </button>
-                        <button class="api-btn" onclick="testCreate()">
-                            <span class="method">POST</span> Создать блюдо
+                            <span class="method ai">AI</span> Анализ
                         </button>
                     </div>
-                    
                     <div class="api-response" id="apiResponse">
-                        <pre>Нажмите на кнопку для отправки запроса</pre>
+                        <pre>Нажмите на кнопку для запроса</pre>
                     </div>
                 </div>
             </div>
@@ -231,13 +287,12 @@
 
         <footer class="footer">
             <div class="footer-content">
-                <span>Столовая #2049</span>
+                <i class="fas fa-copyright"></i> 2025 Столовая #2049. Все права защищены.
             </div>
         </footer>
     </div>
 
     <div id="notification-container"></div>
-
     <script src="script.js"></script>
 </body>
 </html>

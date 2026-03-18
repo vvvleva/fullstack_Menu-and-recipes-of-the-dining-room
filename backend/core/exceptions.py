@@ -35,8 +35,13 @@ async def validation_exception_handler(
 
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Обработка неожиданных ошибок."""
+    # Если это HTTPException, пробрасываем его дальше
     if isinstance(exc, HTTPException):
         raise exc
+    
+    # Логируем ошибку (используем print, чтобы избежать циклических импортов)
+    print(f"Необработанная ошибка: {type(exc).__name__}: {exc}")
+    
     return JSONResponse(
         status_code=500,
         content={

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель администратора - Столовая #2049</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-utensils"></i>
+                    <span class="logo-text">СТОЛОВАЯ #2049</span>
+                </div>
+                <div class="nav-links">
+                    <a href="/" class="nav-link">
+                        <i class="fas fa-home"></i> Главная
+                    </a>
+                    <a href="/admin.html" class="nav-link active">
+                        <i class="fas fa-crown"></i> Админ панель
+                    </a>
+                    <a href="#" class="nav-link" onclick="logout()" id="logoutLink">
+                        <i class="fas fa-sign-out-alt"></i> Выйти
+                    </a>
+                </div>
+                <div class="server-status" id="serverStatus">
+                    <span class="status-indicator"></span>
+                    <span class="status-text">Проверка подключения...</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="main">
+            <div id="mainContent">
+                <div id="userInfo" class="user-info" style="display: none;">
+                    <div class="user-info-content">
+                        <div class="user-avatar">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <span id="userName" class="user-name"></span>
+                        <span id="userRole" class="user-role">Администратор</span>
+                    </div>
+                </div>
+
+                <div class="admin-header">
+                    <h1><i class="fas fa-crown"></i> Панель администратора</h1>
+                    <p>Управление меню, заказами и пользователями</p>
+                </div>
+
+                <div class="admin-tabs">
+                    <button class="tab-btn active" onclick="switchTab('dishes')">
+                        <i class="fas fa-utensils"></i> Блюда
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('orders')">
+                        <i class="fas fa-shopping-bag"></i> Заказы
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('users')">
+                        <i class="fas fa-users"></i> Пользователи
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('stats')">
+                        <i class="fas fa-chart-bar"></i> Статистика
+                    </button>
+                </div>
+
+                <!-- Вкладка с блюдами -->
+                <div id="dishesTab" class="tab-content active">
+                    <div class="tab-header">
+                        <h2><i class="fas fa-utensils"></i> Управление блюдами</h2>
+                        <button class="add-btn" onclick="showAddDishModal()">
+                            <i class="fas fa-plus-circle"></i> Добавить блюдо
+                        </button>
+                    </div>
+                    
+                    <div class="admin-filters">
+                        <input type="text" id="dishSearch" placeholder="Поиск по названию..." class="search-input">
+                        <select id="categoryFilter" class="filter-select">
+                            <option value="">Все категории</option>
+                            <option value="салаты">Салаты</option>
+                            <option value="супы">Супы</option>
+                            <option value="горячее">Горячее</option>
+                            <option value="гарниры">Гарниры</option>
+                            <option value="напитки">Напитки</option>
+                            <option value="десерты">Десерты</option>
+                        </select>
+                    </div>
+
+                    <div id="adminDishesList" class="admin-dishes-list">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i> Загрузка...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка с заказами -->
+                <div id="ordersTab" class="tab-content">
+                    <div class="tab-header">
+                        <h2><i class="fas fa-shopping-bag"></i> Управление заказами</h2>
+                    </div>
+                    
+                    <div class="admin-filters">
+                        <select id="orderStatusFilter" class="filter-select">
+                            <option value="">Все статусы</option>
+                            <option value="pending">Ожидает</option>
+                            <option value="confirmed">Подтвержден</option>
+                            <option value="preparing">Готовится</option>
+                            <option value="ready">Готов</option>
+                            <option value="completed">Выполнен</option>
+                            <option value="cancelled">Отменен</option>
+                        </select>
+                        <input type="text" id="orderSearch" placeholder="Поиск по email..." class="search-input">
+                    </div>
+
+                    <div id="adminOrdersList" class="admin-orders-list">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i> Загрузка...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка с пользователями -->
+                <div id="usersTab" class="tab-content">
+                    <div class="tab-header">
+                        <h2><i class="fas fa-users"></i> Управление пользователями</h2>
+                    </div>
+                    
+                    <div class="admin-filters">
+                        <input type="text" id="userSearch" placeholder="Поиск по email или имени..." class="search-input">
+                    </div>
+
+                    <div id="adminUsersList" class="admin-users-list">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i> Загрузка...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вкладка со статистикой -->
+                <div id="statsTab" class="tab-content">
+                    <div class="tab-header">
+                        <h2><i class="fas fa-chart-bar"></i> Статистика</h2>
+                    </div>
+                    
+                    <div id="adminStats" class="admin-stats">
+                        <div class="loading-spinner">
+                            <i class="fas fa-spinner fa-spin"></i> Загрузка...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <i class="fas fa-copyright"></i> 2025 Столовая #2049. Все права защищены.
+            </div>
+        </footer>
+    </div>
+
+    <!-- Модальное окно добавления/редактирования блюда -->
+    <div id="dishModal" class="modal">
+        <div class="modal-content wide">
+            <span class="close" onclick="closeDishModal()">&times;</span>
+            <h2 id="dishModalTitle"><i class="fas fa-plus-circle"></i> Добавить блюдо</h2>
+            <form id="dishForm" onsubmit="handleSaveDish(event)">
+                <input type="hidden" id="dishId">
+                <div class="admin-form">
+                    <div class="form-group">
+                        <label>Название блюда *</label>
+                        <input type="text" id="dishName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Цена (₽) *</label>
+                        <input type="number" id="dishPrice" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Вес (г) *</label>
+                        <input type="number" id="dishWeight" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Категория *</label>
+                        <select id="dishCategory" required>
+                            <option value="салаты">Салаты</option>
+                            <option value="супы">Супы</option>
+                            <option value="горячее">Горячее</option>
+                            <option value="гарниры">Гарниры</option>
+                            <option value="напитки">Напитки</option>
+                            <option value="десерты">Десерты</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Калории *</label>
+                        <input type="number" id="dishCalories" min="0" required>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Ингредиенты * (через запятую)</label>
+                        <input type="text" id="dishIngredients" placeholder="курица, салат, соус" required>
+                    </div>
+                    <div class="form-group full-width">
+                        <label>Аллергены</label>
+                        <div class="checkbox-group" id="allergenCheckboxes">
+                            <label><input type="checkbox" value="орехи"> Орехи</label>
+                            <label><input type="checkbox" value="арахис"> Арахис</label>
+                            <label><input type="checkbox" value="лактоза"> Лактоза</label>
+                            <label><input type="checkbox" value="глютен"> Глютен</label>
+                            <label><input type="checkbox" value="морепродукты"> Морепродукты</label>
+                            <label><input type="checkbox" value="яйца"> Яйца</label>
+                            <label><input type="checkbox" value="соя"> Соя</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="dishAvailable" checked> Доступно для заказа
+                        </label>
+                    </div>
+                    <button type="submit" class="admin-submit-btn" id="saveDishBtn">
+                        <i class="fas fa-save"></i> Сохранить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно редактирования пользователя -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeUserModal()">&times;</span>
+            <h2><i class="fas fa-user-edit"></i> Редактировать пользователя</h2>
+            <form id="userForm" onsubmit="handleSaveUser(event)">
+                <input type="hidden" id="editUserId">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="editUserEmail" readonly class="form-input" style="background: #f5f5f5;">
+                </div>
+                <div class="form-group">
+                    <label>Полное имя</label>
+                    <input type="text" id="editUserFullName" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Роль</label>
+                    <select id="editUserRole" class="form-input">
+                        <option value="user">Пользователь</option>
+                        <option value="admin">Администратор</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="editUserActive" checked> Активен
+                    </label>
+                </div>
+                <button type="submit" class="admin-submit-btn">
+                    <i class="fas fa-save"></i> Сохранить
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="notification-container"></div>
+    <script src="admin.js"></script>
+</body>
+</html>

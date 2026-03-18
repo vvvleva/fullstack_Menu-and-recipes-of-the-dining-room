@@ -8,8 +8,8 @@
 
 .register-card {
     background: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.1);
     padding: 40px;
     width: 100%;
     max-width: 600px;
@@ -17,10 +17,13 @@
 
 .register-title {
     font-size: 32px;
-    font-weight: 600;
-    color: var(--primary-color);
+    font-weight: 700;
+    color: #333;
     margin-bottom: 8px;
     text-align: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .register-subtitle {
@@ -28,6 +31,35 @@
     text-align: center;
     margin-bottom: 32px;
     font-size: 16px;
+}
+
+.email-info-card {
+    background: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.email-info-icon {
+    font-size: 24px;
+    line-height: 1;
+    color: #2196f3;
+}
+
+.email-info-text {
+    font-size: 14px;
+    color: #0d47a1;
+    line-height: 1.5;
+}
+
+.email-info-text strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 15px;
 }
 
 .register-form {
@@ -45,94 +77,93 @@
 .form-label {
     font-weight: 500;
     font-size: 14px;
-    color: var(--primary-color);
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
-.form-input,
-.form-select {
-    padding: 12px 16px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-    transition: all var(--transition-speed);
+.form-label i {
+    color: #667eea;
+    font-size: 16px;
+}
+
+.form-input {
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all 0.3s ease;
     font-family: 'Inter', sans-serif;
 }
 
-.form-input:focus,
-.form-select:focus {
+.form-input:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(51, 51, 51, 0.1);
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
 }
 
 .form-input.error {
-    border-color: var(--danger-color);
+    border-color: #dc3545;
+    background: #fff8f8;
 }
 
 .password-strength {
     display: flex;
-    gap: 4px;
+    gap: 6px;
     margin-top: 8px;
+    padding: 0 2px;
 }
 
 .strength-bar {
     height: 4px;
     flex: 1;
-    background: #eee;
-    border-radius: 2px;
-    transition: background var(--transition-speed);
+    background: #e0e0e0;
+    border-radius: 4px;
+    transition: all 0.3s ease;
 }
 
 .strength-bar.weak {
-    background: var(--danger-color);
+    background: #dc3545;
+    box-shadow: 0 0 8px rgba(220, 53, 69, 0.3);
 }
 
 .strength-bar.medium {
-    background: var(--warning-color);
+    background: #ffc107;
+    box-shadow: 0 0 8px rgba(255, 193, 7, 0.3);
 }
 
 .strength-bar.strong {
-    background: var(--success-color);
+    background: #28a745;
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.3);
 }
 
-.allergens-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 12px;
-    padding: 8px 0;
-}
-
-.allergen-checkbox {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    cursor: pointer;
-}
-
-.allergen-checkbox input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
+.email-hint {
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
 }
 
 .register-button {
-    padding: 14px;
-    background: var(--primary-color);
+    padding: 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 16px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-speed);
+    transition: all 0.3s ease;
     margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .register-button:hover {
-    background: #444;
     transform: translateY(-2px);
-    box-shadow: var(--box-shadow);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
 }
 
 .register-button:active {
@@ -140,40 +171,23 @@
 }
 
 .register-button:disabled {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: not-allowed;
     transform: none;
-}
-
-.register-footer {
-    text-align: center;
-    margin-top: 24px;
-    padding-top: 24px;
-    border-top: 1px solid #eee;
-    color: #666;
-}
-
-.register-footer a {
-    color: var(--primary-color);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color var(--transition-speed);
-}
-
-.register-footer a:hover {
-    text-decoration: underline;
+    box-shadow: none;
 }
 
 @media (max-width: 768px) {
     .register-card {
-        padding: 24px;
+        padding: 30px 20px;
     }
     
     .register-title {
         font-size: 28px;
     }
     
-    .allergens-grid {
-        grid-template-columns: repeat(2, 1fr);
+    .email-info-card {
+        flex-direction: column;
+        gap: 12px;
     }
 }

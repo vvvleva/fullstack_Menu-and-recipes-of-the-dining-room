@@ -49,7 +49,6 @@ def print_startup_info(frontend_ok: bool) -> None:
     """Вывод информации при запуске."""
     print("=" * 50)
     print("ЗАПУСК ПРИЛОЖЕНИЯ СТОЛОВАЯ #2049")
-    print("=" * 50)
 
     if frontend_ok:
         print("Фронтенд сервер запускается на http://localhost:3000")

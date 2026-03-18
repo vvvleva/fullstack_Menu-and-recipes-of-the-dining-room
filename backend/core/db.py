@@ -76,16 +76,20 @@ def init_db() -> None:
             """
         )
         
+        # Добавляем колонки role и is_active, если их нет
         try:
             conn.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'user'")
+            print("Добавлена колонка role")
         except sqlite3.OperationalError:
             pass
         
         try:
             conn.execute("ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1")
+            print("Добавлена колонка is_active")
         except sqlite3.OperationalError:
             pass
         
+        # Добавляем таблицы для заказов
         conn.executescript(
             """
             CREATE TABLE IF NOT EXISTS orders (
@@ -122,9 +126,14 @@ def init_db() -> None:
             """
         )
 
+        # Проверяем, есть ли блюда в базе
         count = conn.execute("SELECT COUNT(*) AS c FROM dishes").fetchone()["c"]
         if count == 0:
+            print("База данных пуста. Заполняем тестовыми данными...")
             _seed(conn)
+            print("Тестовые данные добавлены")
+        else:
+            print(f"В базе уже есть {count} блюд")
 
 
 def _normalize_list(items: Iterable[str] | None) -> list[str]:
@@ -464,26 +473,35 @@ def create_user_record(
 ) -> dict[str, Any]:
     """Создает новую запись пользователя в базе данных."""
     with get_connection() as conn:
-        cur = conn.execute(
-            """
-            INSERT INTO users(email, password_hash, full_name, allergens_json, diet)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (email.lower(), password_hash, full_name, allergens_json, diet),
-        )
-        user_id = int(cur.lastrowid)
-        row = conn.execute(
-            "SELECT id, email, password_hash, full_name, allergens_json, diet FROM users WHERE id = ?",
-            (user_id,),
-        ).fetchone()
-        return {
-            "id": int(row["id"]),
-            "email": row["email"],
-            "password_hash": row["password_hash"],
-            "full_name": row["full_name"],
-            "allergens_json": row["allergens_json"],
-            "diet": row["diet"],
-        }
+        try:
+            cur = conn.execute(
+                """
+                INSERT INTO users(email, password_hash, full_name, allergens_json, diet)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (email.lower(), password_hash, full_name, allergens_json, diet),
+            )
+            user_id = int(cur.lastrowid)
+            
+            row = conn.execute(
+                "SELECT id, email, password_hash, full_name, allergens_json, diet FROM users WHERE id = ?",
+                (user_id,),
+            ).fetchone()
+            
+            return {
+                "id": int(row["id"]),
+                "email": row["email"],
+                "password_hash": row["password_hash"],
+                "full_name": row["full_name"],
+                "allergens_json": row["allergens_json"],
+                "diet": row["diet"],
+            }
+        except sqlite3.IntegrityError as e:
+            print(f"SQLite IntegrityError: {e}")
+            raise
+        except Exception as e:
+            print(f"Ошибка при создании пользователя: {e}")
+            raise
 
 
 def get_user_orders_count(user_id: int) -> int:
@@ -513,4 +531,48 @@ def get_order_stats() -> dict:
             "total_orders": total,
             "by_status": {row["status"]: row["count"] for row in by_status},
             "total_revenue": revenue
+        }
+
+def update_user_profile(
+    *,
+    user_id: int,
+    full_name: Optional[str],
+    allergens_json: str,
+    diet: Optional[str],
+) -> Optional[dict[str, Any]]:
+    """Обновляет профиль пользователя в базе данных."""
+    with get_connection() as conn:
+        # Проверяем, существует ли пользователь
+        existing = conn.execute(
+            "SELECT id FROM users WHERE id = ?",
+            (user_id,)
+        ).fetchone()
+        
+        if not existing:
+            return None
+        
+        # Обновляем данные
+        conn.execute(
+            """
+            UPDATE users
+            SET full_name = ?, allergens_json = ?, diet = ?
+            WHERE id = ?
+            """,
+            (full_name, allergens_json, diet, user_id)
+        )
+        
+        # Получаем обновленные данные
+        row = conn.execute(
+            "SELECT id, email, full_name, allergens_json, diet, role, is_active FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+        
+        return {
+            "id": int(row["id"]),
+            "email": row["email"],
+            "full_name": row["full_name"],
+            "allergens_json": row["allergens_json"],
+            "diet": row["diet"],
+            "role": row["role"] if "role" in row.keys() else "user",
+            "is_active": bool(row["is_active"]) if "is_active" in row.keys() else True,
         }

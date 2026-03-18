@@ -15,7 +15,7 @@ from core.exceptions import (
     validation_exception_handler,
 )
 from core.logging import LoggingMiddleware
-from middleware.rate_limit import RateLimitMiddleware
+from middleware.simple_rate_limit import SimpleRateLimitMiddleware
 
 from routes.menu import router as menu_router
 from routes.auth import router as auth_router
@@ -53,6 +53,7 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # CORS должен быть ПЕРВЫМ middleware
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -61,12 +62,21 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     
+    # Затем добавляем остальные middleware
     app.add_middleware(LoggingMiddleware)
-    app.add_middleware(RateLimitMiddleware)
+    
+    # Раскомментируйте для включения rate limit с увеличенными лимитами
+    app.add_middleware(
+        SimpleRateLimitMiddleware,
+        requests_per_minute=200,      # Увеличено до 200
+        auth_requests_per_minute=50    # Увеличено до 50
+    )
 
+    # Монтируем статические файлы, если папка существует
     if FRONTEND_DIR.exists():
         app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
+    # Подключаем роутеры
     app.include_router(root_router)
     app.include_router(auth_router)
     app.include_router(menu_router)
@@ -74,6 +84,7 @@ def create_app() -> FastAPI:
     app.include_router(admin_router)
     app.include_router(frontend_router)
 
+    # Обработчики исключений
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(Exception, generic_exception_handler)

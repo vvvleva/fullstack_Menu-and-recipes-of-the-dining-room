@@ -6,22 +6,28 @@
     <title>Регистрация - Столовая #2049</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="register.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="app">
         <header class="header">
             <div class="header-content">
                 <div class="logo">
+                    <i class="fas fa-utensils"></i>
                     <span class="logo-text">СТОЛОВАЯ #2049</span>
                 </div>
                 <div class="nav-links">
-                    <a href="/" class="nav-link">Главная</a>
-                    <a href="/register.html" class="nav-link active">Регистрация</a>
+                    <a href="/" class="nav-link">
+                        <i class="fas fa-home"></i> Главная
+                    </a>
+                    <a href="/register.html" class="nav-link active">
+                        <i class="fas fa-user-plus"></i> Регистрация
+                    </a>
                 </div>
                 <div class="server-status" id="serverStatus">
                     <span class="status-indicator"></span>
-                    <span class="status-text">Проверка подключения...</span>
+                    <span class="status-text">Проверка...</span>
                 </div>
             </div>
         </header>
@@ -32,12 +38,71 @@
                     <h1 class="register-title">Регистрация</h1>
                     <p class="register-subtitle">Создайте аккаунт для персонализированного подбора блюд</p>
                     
-                    <form id="registerForm" class="register-form" onsubmit="handleRegister(event)">
+                    <div class="email-info-card">
+                        <div class="email-info-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="email-info-text">
+                            <strong>Важно!</strong>
+                            После регистрации на указанный email придет письмо с подтверждением.
+                        </div>
+                    </div>
+                    
+                    <form id="registerForm" class="register-form">
                         <div class="form-group">
-                            <label for="fullName" class="form-label">Полное имя</label>
-                            <input type="text" id="fullName" name="fullName" class="form-input" required placeholder="Иван Петров">
+                            <label class="form-label">
+                                <i class="fas fa-user"></i> Полное имя
+                            </label>
+                            <input type="text" id="fullName" class="form-input" required 
+                                   placeholder="Иван Петров">
                         </div>
                         
                         <div class="form-group">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" id="email" name="email" class="form-input" required placeholder
+                            <label class="form-label">
+                                <i class="fas fa-envelope"></i> Email
+                            </label>
+                            <input type="email" id="email" class="form-input" required 
+                                   placeholder="ivan@example.com">
+                            <div class="email-hint">Будет использоваться для входа</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-lock"></i> Пароль
+                            </label>
+                            <input type="password" id="password" class="form-input" required 
+                                   minlength="6" placeholder="Минимум 6 символов">
+                            <div class="password-strength" id="passwordStrength">
+                                <div class="strength-bar"></div>
+                                <div class="strength-bar"></div>
+                                <div class="strength-bar"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-lock"></i> Подтверждение пароля
+                            </label>
+                            <input type="password" id="confirmPassword" class="form-input" required 
+                                   placeholder="Повторите пароль">
+                        </div>
+                        
+                        <button type="submit" class="register-button" id="registerBtn">
+                            <i class="fas fa-user-plus"></i> Зарегистрироваться
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <i class="fas fa-copyright"></i> 2025 Столовая #2049. Все права защищены.
+            </div>
+        </footer>
+    </div>
+
+    <div id="notification-container"></div>
+    <script src="register.js"></script>
+</body>
+</html>

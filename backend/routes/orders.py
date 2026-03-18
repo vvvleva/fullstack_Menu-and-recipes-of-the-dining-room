@@ -27,11 +27,8 @@ async def create_order(
         user_email=current_user.email
     )
     
-    return {
-        "status": "success",
-        "message": "Заказ успешно создан",
-        "data": order
-    }
+    # Возвращаем только объект заказа, без обертки
+    return order
 
 
 @router.get("/", response_model=OrderListResponse)
@@ -54,14 +51,11 @@ async def get_my_orders(
         ).fetchone()["count"]
     
     return {
-        "status": "success",
-        "data": {
-            "items": orders,
-            "total": total,
-            "page": page,
-            "size": size,
-            "pages": (total + size - 1) // size
-        }
+        "items": orders,
+        "total": total,
+        "page": page,
+        "size": size,
+        "pages": (total + size - 1) // size
     }
 
 
@@ -84,10 +78,7 @@ async def get_order(
             }
         )
     
-    return {
-        "status": "success",
-        "data": order
-    }
+    return order
 
 
 @router.patch("/{order_id}/status", response_model=Order)
@@ -124,11 +115,7 @@ async def update_order_status(
             }
         )
     
-    return {
-        "status": "success",
-        "message": f"Статус заказа изменен на {status_update.status}",
-        "data": order
-    }
+    return order
 
 
 @router.delete("/{order_id}", response_model=Order)
@@ -155,11 +142,7 @@ async def cancel_order(
             }
         )
     
-    return {
-        "status": "success",
-        "message": "Заказ отменен",
-        "data": order
-    }
+    return order
 
 
 @router.get("/admin/all", response_model=OrderListResponse)
@@ -231,12 +214,9 @@ async def get_all_orders(
             })
     
     return {
-        "status": "success",
-        "data": {
-            "items": orders,
-            "total": total,
-            "page": page,
-            "size": size,
-            "pages": (total + size - 1) // size
-        }
+        "items": orders,
+        "total": total,
+        "page": page,
+        "size": size,
+        "pages": (total + size - 1) // size
     }

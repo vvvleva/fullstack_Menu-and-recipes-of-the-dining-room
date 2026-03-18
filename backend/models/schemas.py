@@ -124,3 +124,9 @@ class UserPublic(UserBase):
     diet: Optional[str] = None
     role: str = Field(default="user", description="Роль пользователя (user/admin)")
     is_active: bool = Field(default=True, description="Активен ли пользователь")
+
+class UserUpdate(BaseModel):
+    """Схема для обновления профиля пользователя."""
+    full_name: Optional[str] = Field(None, max_length=200, description="Полное имя")
+    allergens: Optional[list[str]] = Field(default_factory=list, description="Аллергены пользователя")
+    diet: Optional[str] = Field(None, max_length=100, description="Тип диеты")
