@@ -5,7 +5,7 @@ let dishQuantity = 1;
 let userAllergens = [];
 let currentUser = null;
 let userRole = 'user';
-let isEditingProfile = false; // Флаг режима редактирования
+let isEditingProfile = false;
 
 const slides = document.querySelectorAll('.card');
 const dots = document.querySelectorAll('.dot');
@@ -17,16 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('Приложение запущено');
     checkServer();
     loadMenu();
-    
-    // Проверяем авторизацию при загрузке
-    const token = localStorage.getItem('token');
-    if (token) {
-        console.log('Найден токен, загружаем данные пользователя');
-        loadUserData();
-    } else {
-        loadUser(); // Загружаем из localStorage если есть
-    }
-    
+    loadUser();
     loadCart();
     
     // Проверка параметра profile=open
@@ -93,7 +84,6 @@ async function handleLogin(event) {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Вход...';
     
     try {
-        // Создаем FormData для OAuth2
         const formData = new URLSearchParams();
         formData.append('username', email);
         formData.append('password', password);
@@ -107,23 +97,16 @@ async function handleLogin(event) {
         });
         
         const data = await res.json();
-        console.log('Ответ при входе:', data);
         
         if (res.ok) {
-            // Сохраняем токен
             localStorage.setItem('token', data.access_token);
-            console.log('Токен сохранен:', data.access_token);
-            
-            // Получаем данные пользователя
             await loadUserData();
-            
             closeLoginModal();
             showNotif('Вход выполнен успешно!', 'success');
         } else {
             showNotif(data.detail || 'Ошибка входа', 'error');
         }
     } catch (err) {
-        console.error('Ошибка входа:', err);
         showNotif('Ошибка соединения с сервером', 'error');
     } finally {
         btn.disabled = false;
@@ -133,8 +116,6 @@ async function handleLogin(event) {
 
 async function loadUserData() {
     const token = localStorage.getItem('token');
-    console.log('Загрузка данных пользователя с токеном:', token ? 'токен есть' : 'токена нет');
-    
     if (!token) return null;
     
     try {
@@ -144,11 +125,8 @@ async function loadUserData() {
             }
         });
         
-        console.log('Статус ответа /auth/me:', res.status);
-        
         if (res.ok) {
             const userData = await res.json();
-            console.log('Данные пользователя:', userData);
             
             currentUser = {
                 id: userData.id,
@@ -169,17 +147,17 @@ async function loadUserData() {
             
             return currentUser;
         } else {
-            console.log('Токен невалидный, очищаем localStorage');
-            // Токен невалидный
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             localStorage.removeItem('userRole');
+            currentUser = null;
+            userRole = 'user';
+            userAllergens = [];
+            return null;
         }
     } catch (err) {
-        console.error('Ошибка загрузки данных пользователя:', err);
+        return null;
     }
-    
-    return null;
 }
 
 // ==================== СЕРВЕР ====================
@@ -303,7 +281,6 @@ async function loadMenu() {
             listEl.appendChild(div);
         });
     } catch (err) {
-        console.error('Ошибка загрузки меню:', err);
         listEl.innerHTML = '<div class="menu-item">Ошибка загрузки</div>';
     }
 }
@@ -319,12 +296,10 @@ async function selectDish(id) {
         dishQuantity = 1;
         document.getElementById('dishQuantity').textContent = '1';
         
-        // Заполнение деталей
         document.getElementById('dishTitle').innerHTML = `<i class="fas fa-info-circle"></i> ${dish.name}`;
         document.getElementById('dishPrice').textContent = dish.price + ' ₽';
         document.getElementById('dishMeta').textContent = dish.weight + ' г · ' + dish.calories + ' ккал';
         
-        // Анализ аллергенов
         const dishAllergens = dish.allergens || [];
         const userMatches = dishAllergens.filter(a => userAllergens.includes(a));
         const aiBlock = document.getElementById('aiBlock');
@@ -345,7 +320,6 @@ async function selectDish(id) {
             aiMsg.textContent = 'Аллергены не обнаружены';
         }
         
-        // Ингредиенты
         const ingList = document.getElementById('ingredientsList');
         ingList.innerHTML = '';
         (dish.ingredients || []).forEach(ing => {
@@ -380,11 +354,8 @@ async function handleAddDish(event) {
         return;
     }
     
-    // Собираем аллергены из чекбоксов
-    const allergenCheckboxes = document.querySelectorAll('#allergenCheckboxes input:checked');
-    const allergens = Array.from(allergenCheckboxes).map(cb => cb.value);
+    // Убрана обработка аллергенов - они будут определяться нейросетью
     
-    // Разбираем ингредиенты
     const ingredientsStr = document.getElementById('dishIngredients').value;
     const ingredients = ingredientsStr.split(',').map(i => i.trim()).filter(i => i);
     
@@ -395,7 +366,7 @@ async function handleAddDish(event) {
         category: document.getElementById('dishCategory').value,
         calories: parseInt(document.getElementById('dishCalories').value),
         ingredients: ingredients,
-        allergens: allergens,
+        allergens: [], // Пустой массив - аллергены будут определяться нейросетью
         available: document.getElementById('dishAvailable').checked
     };
     
@@ -418,12 +389,11 @@ async function handleAddDish(event) {
         if (res.ok) {
             showNotif('Блюдо успешно добавлено!', 'success');
             closeAddDishModal();
-            loadMenu(); // Обновляем меню
+            loadMenu();
         } else {
             showNotif(data.detail || 'Ошибка при добавлении блюда', 'error');
         }
     } catch (err) {
-        console.error('Ошибка добавления блюда:', err);
         showNotif('Ошибка соединения с сервером', 'error');
     } finally {
         btn.disabled = false;
@@ -437,24 +407,22 @@ function updateAdminUI() {
         adminBtn.style.display = userRole === 'admin' ? 'inline-flex' : 'none';
     }
     
-    // Добавляем ссылку на админ панель в навигацию для админов
     const navLinks = document.querySelector('.nav-links');
-    if (navLinks && userRole === 'admin') {
-        // Проверяем, есть ли уже ссылка на админ панель
+    if (navLinks) {
         let adminLink = document.getElementById('adminNavLink');
-        if (!adminLink) {
-            adminLink = document.createElement('a');
-            adminLink.id = 'adminNavLink';
-            adminLink.href = '/admin.html';
-            adminLink.className = 'nav-link';
-            adminLink.innerHTML = '<i class="fas fa-crown"></i> Админ панель';
-            navLinks.appendChild(adminLink);
-        }
-    } else {
-        // Удаляем ссылку, если пользователь не админ
-        const adminLink = document.getElementById('adminNavLink');
-        if (adminLink) {
-            adminLink.remove();
+        if (userRole === 'admin') {
+            if (!adminLink) {
+                adminLink = document.createElement('a');
+                adminLink.id = 'adminNavLink';
+                adminLink.href = '/admin.html';
+                adminLink.className = 'nav-link';
+                adminLink.innerHTML = '<i class="fas fa-crown"></i> Админ панель';
+                navLinks.appendChild(adminLink);
+            }
+        } else {
+            if (adminLink) {
+                adminLink.remove();
+            }
         }
     }
 }
@@ -559,15 +527,12 @@ async function checkout() {
     }
     
     const token = localStorage.getItem('token');
-    console.log('Токен для заказа:', token ? 'токен есть' : 'токена нет');
-    
     if (!token) {
         showNotif('Необходимо авторизоваться', 'error');
         showLoginModal();
         return;
     }
     
-    // Формируем данные заказа в правильном формате для API
     const orderData = {
         items: cart.map(item => ({
             dish_id: item.id,
@@ -577,8 +542,6 @@ async function checkout() {
         delivery_time: null,
         comments: ''
     };
-    
-    console.log('Отправка заказа:', JSON.stringify(orderData, null, 2));
     
     const btn = document.querySelector('.checkout-btn');
     const originalText = btn.innerHTML;
@@ -595,64 +558,18 @@ async function checkout() {
             body: JSON.stringify(orderData)
         });
         
-        console.log('Статус ответа заказа:', res.status);
-        
-        let data;
-        const contentType = res.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-            data = await res.json();
-        } else {
-            const text = await res.text();
-            console.error('Не JSON ответ:', text);
-            throw new Error('Сервер вернул некорректный ответ');
-        }
-        
-        console.log('Ответ сервера:', data);
-        
         if (res.ok) {
-            // Очищаем корзину после успешного заказа
             localStorage.removeItem('cart');
             loadCart();
             showNotif('Заказ успешно оформлен!', 'success');
-            
-            // Показываем детали заказа
-            if (data.id) {
-                showNotif(`Номер заказа: ${data.id}`, 'info');
-            }
-            
-            // Обновляем историю заказов в профиле
-            if (typeof loadOrderHistory === 'function') {
-                loadOrderHistory();
-            }
-            
-            // Переходим в профиль через 2 секунды
-            setTimeout(() => {
-                goToSlide(3);
-            }, 2000);
+            loadOrderHistory();
+            setTimeout(() => goToSlide(3), 2000);
         } else {
-            // Если 401 Unauthorized - пробуем обновить данные пользователя
-            if (res.status === 401) {
-                console.log('Токен истек, пробуем обновить...');
-                localStorage.removeItem('token');
-                const newUserData = await loadUserData();
-                if (newUserData) {
-                    showNotif('Сессия обновлена, попробуйте снова', 'info');
-                } else {
-                    showNotif('Сессия истекла, войдите снова', 'error');
-                    showLoginModal();
-                }
-            }
-            
-            const errorMsg = data.detail || data.message || 'Ошибка при оформлении заказа';
-            if (typeof errorMsg === 'object') {
-                showNotif(JSON.stringify(errorMsg), 'error');
-            } else {
-                showNotif(errorMsg, 'error');
-            }
+            const data = await res.json();
+            showNotif(data.detail || 'Ошибка при оформлении заказа', 'error');
         }
     } catch (err) {
-        console.error('Ошибка оформления заказа:', err);
-        showNotif('Ошибка соединения с сервером. Проверьте, запущен ли бэкенд.', 'error');
+        showNotif('Ошибка соединения с сервером', 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = originalText;
@@ -677,8 +594,6 @@ async function loadOrderHistory() {
         
         if (res.ok) {
             const data = await res.json();
-            console.log('История заказов:', data);
-            
             const orders = data.items || [];
             
             if (orders.length === 0) {
@@ -715,13 +630,11 @@ async function loadOrderHistory() {
             
             container.innerHTML = ordersHtml;
         }
-    } catch (err) {
-        console.error('Ошибка загрузки истории заказов:', err);
-    }
+    } catch (err) {}
 }
 
 function getStatusText(status) {
-    const statusMap = {
+    const map = {
         'pending': 'Ожидает',
         'confirmed': 'Подтвержден',
         'preparing': 'Готовится',
@@ -729,7 +642,7 @@ function getStatusText(status) {
         'completed': 'Выполнен',
         'cancelled': 'Отменен'
     };
-    return statusMap[status] || status;
+    return map[status] || status;
 }
 
 // ==================== ПОЛЬЗОВАТЕЛЬ ====================
@@ -743,16 +656,15 @@ function loadUser() {
             currentUser = JSON.parse(saved);
             userRole = savedRole || 'user';
             userAllergens = currentUser.allergens || [];
-            updateProfileUI();
-            updateUserInfo();
-            updateAdminUI();
-        } catch (e) {
-            console.error('Ошибка загрузки пользователя');
-        }
+        } catch (e) {}
     } else if (token) {
-        // Есть токен, но нет данных пользователя - загружаем
         loadUserData();
+        return;
     }
+    
+    updateUserInfo();
+    updateProfileUI();
+    updateAdminUI();
 }
 
 function updateUserInfo() {
@@ -760,12 +672,14 @@ function updateUserInfo() {
     const nameSpan = document.getElementById('userName');
     const roleSpan = document.getElementById('userRole');
     
-    if (currentUser && infoDiv && nameSpan) {
+    if (!infoDiv || !nameSpan || !roleSpan) return;
+    
+    if (currentUser) {
         nameSpan.textContent = currentUser.name || 'Пользователь';
         roleSpan.textContent = userRole === 'admin' ? 'Администратор' : 'Пользователь';
         roleSpan.style.backgroundColor = userRole === 'admin' ? '#ff6b6b' : '#667eea';
         infoDiv.style.display = 'block';
-    } else if (infoDiv) {
+    } else {
         infoDiv.style.display = 'none';
     }
 }
@@ -794,23 +708,22 @@ function updateProfileUI() {
         return;
     }
     
+    const diets = [
+        { value: '', label: 'Нет', icon: 'times-circle' },
+        { value: 'веган', label: 'Веган', icon: 'leaf' },
+        { value: 'вегетарианец', label: 'Вегетарианец', icon: 'carrot' },
+        { value: 'безглютеновая', label: 'Безглютеновая', icon: 'wheat-alt' }
+    ];
+    
     const allergens = ['орехи', 'арахис', 'лактоза', 'глютен', 'морепродукты', 'яйца', 'соя'];
     
     if (isEditingProfile) {
-        // Режим редактирования - показываем чекбоксы и радио
         const allergenCheckboxes = allergens.map(a => 
             `<label class="option">
                 <input type="checkbox" value="${a}" ${userAllergens.includes(a) ? 'checked' : ''}> 
                 <i class="fas fa-${getAllergenIcon(a)}"></i> ${a}
             </label>`
         ).join('');
-        
-        const diets = [
-            { value: '', label: 'Нет', icon: 'times-circle' },
-            { value: 'веган', label: 'Веган', icon: 'leaf' },
-            { value: 'вегетарианец', label: 'Вегетарианец', icon: 'carrot' },
-            { value: 'безглютеновая', label: 'Безглютеновая', icon: 'wheat-alt' }
-        ];
         
         const dietRadios = diets.map(d => 
             `<label class="option">
@@ -820,8 +733,7 @@ function updateProfileUI() {
         ).join('');
         
         const roleBadge = userRole === 'admin' 
-            ? '<span class="profile-role"><i class="fas fa-crown"></i> Администратор</span>' 
-            : '';
+            ? '<span class="profile-role"><i class="fas fa-crown"></i> Администратор</span>' : '';
         
         profileCard.innerHTML = `
             <div class="profile-header">
@@ -832,52 +744,28 @@ function updateProfileUI() {
                     ${roleBadge}
                 </div>
             </div>
-            
             <div class="profile-section">
-                <div class="section-title">
-                    <i class="fas fa-allergies"></i> Ваши аллергены
-                </div>
-                <div class="options-group" id="allergensGroup">
-                    ${allergenCheckboxes}
-                </div>
+                <div class="section-title">Ваши аллергены</div>
+                <div class="options-group" id="allergensGroup">${allergenCheckboxes}</div>
             </div>
-            
             <div class="profile-section">
-                <div class="section-title">
-                    <i class="fas fa-utensils"></i> Диета
-                </div>
-                <div class="options-group">
-                    ${dietRadios}
-                </div>
+                <div class="section-title">Диета</div>
+                <div class="options-group">${dietRadios}</div>
             </div>
-            
             <div class="profile-actions">
-                <button class="save-btn" onclick="saveProfile()">
-                    <i class="fas fa-save"></i> Сохранить
-                </button>
-                <button class="cancel-btn" onclick="cancelEdit()">
-                    <i class="fas fa-times"></i> Отмена
-                </button>
+                <button class="save-btn" onclick="saveProfile()">Сохранить</button>
+                <button class="cancel-btn" onclick="cancelEdit()">Отмена</button>
             </div>
-            
-            <!-- Контейнер для истории заказов -->
             <div id="orderHistoryContainer"></div>
-            
             ${userRole === 'admin' ? `
             <div class="admin-section">
                 <h4><i class="fas fa-crown"></i> Панель администратора</h4>
-                <button class="save-btn" onclick="window.location.href='/admin.html'">
-                    <i class="fas fa-crown"></i> Перейти в админ панель
-                </button>
-            </div>
-            ` : ''}
+                <button class="save-btn" onclick="window.location.href='/admin.html'">Перейти в админ панель</button>
+            </div>` : ''}
         `;
     } else {
-        // Режим просмотра - показываем только выбранные значения
         const selectedAllergens = userAllergens.length > 0 
-            ? userAllergens.map(a => 
-                `<span class="allergen-tag"><i class="fas fa-${getAllergenIcon(a)}"></i> ${a}</span>`
-              ).join('')
+            ? userAllergens.map(a => `<span class="allergen-tag"><i class="fas fa-${getAllergenIcon(a)}"></i> ${a}</span>`).join('')
             : '<span class="no-data">Не указаны</span>';
         
         const dietText = currentUser.diet 
@@ -885,12 +773,11 @@ function updateProfileUI() {
             : 'Не указана';
         
         const dietIcon = currentUser.diet 
-            ? diets.find(d => d.value === currentUser.diet)?.icon || 'times-circle'
+            ? diets.find(d => d.value === currentUser.diet)?.icon || 'question-circle'
             : 'times-circle';
         
         const roleBadge = userRole === 'admin' 
-            ? '<span class="profile-role"><i class="fas fa-crown"></i> Администратор</span>' 
-            : '';
+            ? '<span class="profile-role"><i class="fas fa-crown"></i> Администратор</span>' : '';
         
         profileCard.innerHTML = `
             <div class="profile-header">
@@ -901,45 +788,25 @@ function updateProfileUI() {
                     ${roleBadge}
                 </div>
             </div>
-            
             <div class="profile-section">
-                <div class="section-title">
-                    <i class="fas fa-allergies"></i> Ваши аллергены
-                </div>
-                <div class="allergens-display">
-                    ${selectedAllergens}
-                </div>
+                <div class="section-title"><i class="fas fa-allergies"></i> Ваши аллергены</div>
+                <div class="allergens-display">${selectedAllergens}</div>
             </div>
-            
             <div class="profile-section">
-                <div class="section-title">
-                    <i class="fas fa-utensils"></i> Диета
-                </div>
-                <div class="diet-display">
-                    <i class="fas fa-${dietIcon}"></i> ${dietText}
-                </div>
+                <div class="section-title"><i class="fas fa-utensils"></i> Диета</div>
+                <div class="diet-display"><i class="fas fa-${dietIcon}"></i> ${dietText}</div>
             </div>
-            
-            <button class="edit-btn" onclick="toggleEditMode()">
-                <i class="fas fa-edit"></i> Изменить профиль
-            </button>
-            
-            <!-- Контейнер для истории заказов -->
+            <button class="edit-btn" onclick="toggleEditMode()"><i class="fas fa-edit"></i> Изменить профиль</button>
             <div id="orderHistoryContainer"></div>
-            
             ${userRole === 'admin' ? `
             <div class="admin-section">
                 <h4><i class="fas fa-crown"></i> Панель администратора</h4>
-                <button class="save-btn" onclick="window.location.href='/admin.html'">
-                    <i class="fas fa-crown"></i> Перейти в админ панель
-                </button>
-            </div>
-            ` : ''}
+                <button class="save-btn" onclick="window.location.href='/admin.html'"><i class="fas fa-cog"></i> Перейти в админ панель</button>
+            </div>` : ''}
         `;
     }
     
-    // Загружаем историю заказов после отображения профиля
-    loadOrderHistory();
+    setTimeout(() => loadOrderHistory(), 100);
 }
 
 function getAllergenIcon(allergen) {
@@ -968,69 +835,47 @@ async function saveProfile() {
         if (r.checked) diet = r.value;
     });
     
-    if (currentUser) {
-        const token = localStorage.getItem('token');
-        
-        if (token) {
-            // Отправляем на сервер
-            try {
-                const res = await fetch(`${API_URL}/auth/me`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        full_name: currentUser.name,
-                        allergens: selected,
-                        diet: diet
-                    })
-                });
-                
-                if (res.ok) {
-                    const updatedUser = await res.json();
-                    currentUser = {
-                        id: updatedUser.id,
-                        name: updatedUser.full_name,
-                        email: updatedUser.email,
-                        allergens: updatedUser.allergens || [],
-                        diet: updatedUser.diet || null
-                    };
-                    userAllergens = updatedUser.allergens || [];
-                    
-                    localStorage.setItem('user', JSON.stringify(currentUser));
-                    
-                    showNotif('Настройки сохранены на сервере', 'success');
-                    
-                    // Выходим из режима редактирования
-                    isEditingProfile = false;
-                    updateProfileUI();
-                    
-                    // Обновляем меню с новыми аллергенами
-                    loadMenu();
-                } else {
-                    const errorData = await res.json();
-                    showNotif(errorData.detail || 'Ошибка сохранения на сервере', 'error');
-                }
-            } catch (err) {
-                console.error('Ошибка сохранения на сервере:', err);
-                showNotif('Ошибка соединения с сервером', 'error');
+    if (!currentUser) return;
+    
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+        try {
+            const res = await fetch(`${API_URL}/auth/me`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    full_name: currentUser.name,
+                    allergens: selected,
+                    diet: diet || null
+                })
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                currentUser = {
+                    id: data.id,
+                    name: data.full_name,
+                    email: data.email,
+                    allergens: data.allergens || [],
+                    diet: data.diet || null
+                };
+                userAllergens = data.allergens || [];
+                localStorage.setItem('user', JSON.stringify(currentUser));
+                showNotif('Настройки сохранены', 'success');
+                isEditingProfile = false;
+                updateProfileUI();
+                loadMenu(); // Перезагружаем меню для обновления индикации аллергенов
+            } else {
+                const error = await res.json();
+                showNotif(error.detail || 'Ошибка при сохранении', 'error');
             }
-        } else {
-            // Сохраняем только локально (если нет токена)
-            currentUser.allergens = selected;
-            currentUser.diet = diet;
-            userAllergens = selected;
-            localStorage.setItem('user', JSON.stringify(currentUser));
-            
-            showNotif('Настройки сохранены локально', 'info');
-            
-            // Выходим из режима редактирования
-            isEditingProfile = false;
-            updateProfileUI();
-            
-            // Обновляем меню с новыми аллергенами
-            loadMenu();
+        } catch (err) {
+            console.error('Ошибка сохранения:', err);
+            showNotif('Ошибка соединения с сервером', 'error');
         }
     }
 }
@@ -1044,9 +889,9 @@ function logout() {
     userAllergens = [];
     userRole = 'user';
     isEditingProfile = false;
-    loadUser();
-    updateProfileUI();
+    
     updateUserInfo();
+    updateProfileUI();
     updateAdminUI();
     loadMenu();
     loadCart();
@@ -1056,7 +901,7 @@ function logout() {
 // ==================== API ТЕСТЫ ====================
 async function testAPI(endpoint) {
     const respEl = document.getElementById('apiResponse');
-    respEl.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Запрос...</div>';
+    respEl.innerHTML = '<div class="loading-spinner">Запрос...</div>';
     
     try {
         const url = endpoint === 'health' ? `${API_URL}/health` : `${API_URL}/api/${endpoint}`;
@@ -1070,7 +915,7 @@ async function testAPI(endpoint) {
 
 async function testAI() {
     const respEl = document.getElementById('apiResponse');
-    respEl.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Анализ...</div>';
+    respEl.innerHTML = '<div class="loading-spinner">Анализ...</div>';
     
     try {
         const allergens = userAllergens.length ? userAllergens.join(',') : 'нет';
@@ -1087,19 +932,8 @@ function showNotif(msg, type) {
     const container = document.getElementById('notification-container');
     if (!container) return;
     
-    const colors = { 
-        success: '#28a745', 
-        error: '#dc3545', 
-        warning: '#ffc107', 
-        info: '#17a2b8' 
-    };
-    
-    const icons = {
-        success: 'check-circle',
-        error: 'exclamation-circle',
-        warning: 'exclamation-triangle',
-        info: 'info-circle'
-    };
+    const colors = { success: '#28a745', error: '#dc3545', warning: '#ffc107', info: '#17a2b8' };
+    const icons = { success: 'check-circle', error: 'exclamation-circle', warning: 'exclamation-triangle', info: 'info-circle' };
     
     const notif = document.createElement('div');
     notif.innerHTML = `<i class="fas fa-${icons[type]}"></i> ${msg}`;
@@ -1131,13 +965,10 @@ if (track) {
     track.addEventListener('touchstart', e => touchStart = e.changedTouches[0].screenX);
     track.addEventListener('touchend', e => {
         const diff = e.changedTouches[0].screenX - touchStart;
-        if (Math.abs(diff) > 50) {
-            diff > 0 ? prevSlide() : nextSlide();
-        }
+        if (Math.abs(diff) > 50) diff > 0 ? prevSlide() : nextSlide();
     });
 }
 
-// Клавиши
 document.addEventListener('keydown', e => {
     if (e.key === 'ArrowLeft') prevSlide();
     if (e.key === 'ArrowRight') nextSlide();

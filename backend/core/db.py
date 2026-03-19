@@ -275,6 +275,7 @@ def create_dish(payload: dict[str, Any]) -> dict[str, Any]:
         )
         dish_id = int(cur.lastrowid)
         
+        # Сохраняем только ингредиенты, аллергены будут определяться нейросетью
         _set_links(
             conn,
             dish_id=dish_id,
@@ -283,13 +284,15 @@ def create_dish(payload: dict[str, Any]) -> dict[str, Any]:
             target_col="ingredient_id",
             names=payload.get("ingredients"),
         )
+        
+        # Аллергены теперь пустые - они будут определяться нейросетью на лету
         _set_links(
             conn,
             dish_id=dish_id,
             link_table="dish_allergens",
             target_table="allergens",
             target_col="allergen_id",
-            names=payload.get("allergens"),
+            names=[],  # Не сохраняем аллергены от админа
         )
         
         row = conn.execute(
@@ -323,6 +326,7 @@ def update_dish(dish_id: int, payload: dict[str, Any]) -> dict[str, Any] | None:
             ),
         )
 
+        # Обновляем только ингредиенты
         _set_links(
             conn,
             dish_id=dish_id,
@@ -331,13 +335,15 @@ def update_dish(dish_id: int, payload: dict[str, Any]) -> dict[str, Any] | None:
             target_col="ingredient_id",
             names=payload.get("ingredients"),
         )
+        
+        # Аллергены очищаем - они будут определяться нейросетью
         _set_links(
             conn,
             dish_id=dish_id,
             link_table="dish_allergens",
             target_table="allergens",
             target_col="allergen_id",
-            names=payload.get("allergens"),
+            names=[],
         )
 
         row = conn.execute(
@@ -371,7 +377,6 @@ def _seed(conn: sqlite3.Connection) -> None:
             "weight": 250,
             "category": "салаты",
             "ingredients": ["курица", "салат айсберг", "соус", "пармезан", "грецкий орех", "гренки"],
-            "allergens": ["орехи", "глютен", "лактоза"],
             "calories": 420,
             "available": True,
         },
@@ -381,7 +386,6 @@ def _seed(conn: sqlite3.Connection) -> None:
             "weight": 200,
             "category": "салаты",
             "ingredients": ["помидоры", "огурцы", "фета", "оливки", "оливковое масло"],
-            "allergens": ["лактоза"],
             "calories": 250,
             "available": True,
         },
@@ -391,7 +395,6 @@ def _seed(conn: sqlite3.Connection) -> None:
             "weight": 300,
             "category": "супы",
             "ingredients": ["свекла", "капуста", "картофель", "говядина", "сметана"],
-            "allergens": ["лактоза"],
             "calories": 180,
             "available": True,
         },
@@ -401,7 +404,6 @@ def _seed(conn: sqlite3.Connection) -> None:
             "weight": 350,
             "category": "горячее",
             "ingredients": ["котлеты", "картофельное пюре", "соус"],
-            "allergens": ["глютен", "лактоза"],
             "calories": 550,
             "available": True,
         },
@@ -431,14 +433,6 @@ def _seed(conn: sqlite3.Connection) -> None:
             target_table="ingredients",
             target_col="ingredient_id",
             names=item.get("ingredients"),
-        )
-        _set_links(
-            conn,
-            dish_id=dish_id,
-            link_table="dish_allergens",
-            target_table="allergens",
-            target_col="allergen_id",
-            names=item.get("allergens"),
         )
 
 
@@ -533,6 +527,7 @@ def get_order_stats() -> dict:
             "total_revenue": revenue
         }
 
+
 def update_user_profile(
     *,
     user_id: int,
@@ -560,6 +555,7 @@ def update_user_profile(
             """,
             (full_name, allergens_json, diet, user_id)
         )
+        conn.commit()
         
         # Получаем обновленные данные
         row = conn.execute(

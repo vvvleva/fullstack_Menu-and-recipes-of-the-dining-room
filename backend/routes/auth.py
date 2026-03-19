@@ -175,7 +175,7 @@ async def update_me(
         # Обновляем профиль в базе данных
         updated_record = update_user_profile(
             user_id=current_user.id,
-            full_name=user_update.full_name,
+            full_name=user_update.full_name if user_update.full_name is not None else current_user.full_name,
             allergens_json=allergens_json,
             diet=user_update.diet
         )
@@ -188,11 +188,19 @@ async def update_me(
         
         print(f"Профиль обновлен: {updated_record}")
         
+        # Получаем аллергены из JSON
+        allergens = []
+        if updated_record["allergens_json"]:
+            try:
+                allergens = json.loads(updated_record["allergens_json"])
+            except:
+                allergens = []
+        
         return UserPublic(
             id=updated_record["id"],
             email=updated_record["email"],
             full_name=updated_record["full_name"],
-            allergens=user_update.allergens or [],
+            allergens=allergens,
             diet=updated_record["diet"],
             role=updated_record.get("role", "user"),
             is_active=updated_record.get("is_active", True)

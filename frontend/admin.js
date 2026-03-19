@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('categoryFilter')?.addEventListener('change', filterDishes);
     document.getElementById('orderStatusFilter')?.addEventListener('change', loadOrders);
     document.getElementById('orderSearch')?.addEventListener('input', filterOrders);
-    document.getElementById('userSearch')?.addEventListener('input', filterUsers);
     
     // Обновление статуса сервера каждые 5 секунд
     setInterval(checkServer, 5000);
@@ -53,7 +52,6 @@ async function checkAdminAccess() {
             updateUserInfo();
             loadDishes();
             loadOrders();
-            loadUsers();
             loadStats();
         } else {
             localStorage.removeItem('token');
@@ -156,6 +154,9 @@ function displayDishes(dishes) {
                     <span class="admin-dish-status ${dish.available ? 'available' : 'unavailable'}">
                         ${dish.available ? 'Доступно' : 'Недоступно'}
                     </span>
+                    <span class="admin-dish-allergens" title="Аллергены определяются нейросетью">
+                        <i class="fas fa-robot" style="color: #667eea;"></i>
+                    </span>
                 </div>
                 <div class="admin-dish-actions">
                     <button class="admin-dish-edit" onclick="editDish(${dish.id})">
@@ -208,11 +209,6 @@ async function editDish(id) {
         document.getElementById('dishIngredients').value = dish.ingredients.join(', ');
         document.getElementById('dishAvailable').checked = dish.available;
         
-        // Отмечаем аллергены
-        document.querySelectorAll('#allergenCheckboxes input[type="checkbox"]').forEach(cb => {
-            cb.checked = dish.allergens.includes(cb.value);
-        });
-        
         document.getElementById('dishModal').style.display = 'block';
     } catch (err) {
         console.error('Ошибка загрузки блюда:', err);
@@ -230,12 +226,6 @@ async function handleSaveDish(event) {
     const token = localStorage.getItem('token');
     const dishId = document.getElementById('dishId').value;
     
-    // Собираем аллергены
-    const allergens = [];
-    document.querySelectorAll('#allergenCheckboxes input:checked').forEach(cb => {
-        allergens.push(cb.value);
-    });
-    
     // Разбираем ингредиенты
     const ingredients = document.getElementById('dishIngredients').value
         .split(',')
@@ -249,7 +239,7 @@ async function handleSaveDish(event) {
         category: document.getElementById('dishCategory').value,
         calories: parseInt(document.getElementById('dishCalories').value),
         ingredients: ingredients,
-        allergens: allergens,
+        allergens: [], // Пустой массив - аллергены будут определяться нейросетью
         available: document.getElementById('dishAvailable').checked
     };
     
@@ -462,118 +452,6 @@ function getStatusText(status) {
         'cancelled': 'Отменен'
     };
     return texts[status] || status;
-}
-
-// ==================== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ====================
-async function loadUsers() {
-    const container = document.getElementById('adminUsersList');
-    if (!container) return;
-    
-    container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Загрузка...</div>';
-    
-    const token = localStorage.getItem('token');
-    
-    try {
-        const res = await fetch(`${API_URL}/api/admin/users?limit=100`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
-        const data = await res.json();
-        const users = data.data || [];
-        
-        window.allUsers = users;
-        displayUsers(users);
-    } catch (err) {
-        console.error('Ошибка загрузки пользователей:', err);
-        container.innerHTML = '<div class="error-message">Ошибка загрузки пользователей</div>';
-    }
-}
-
-function displayUsers(users) {
-    const container = document.getElementById('adminUsersList');
-    
-    if (users.length === 0) {
-        container.innerHTML = '<div class="empty-message">Пользователи не найдены</div>';
-        return;
-    }
-    
-    let html = '';
-    users.forEach(user => {
-        const roleClass = user.role === 'admin' ? 'role-admin' : 'role-user';
-        const roleText = user.role === 'admin' ? 'Администратор' : 'Пользователь';
-        
-        html += `
-            <div class="admin-user-item" data-user-id="${user.id}">
-                <div class="admin-user-info">
-                    <div class="user-avatar-small">
-                        <i class="fas fa-user-circle"></i>
-                    </div>
-                    <div class="user-details">
-                        <span class="user-name">${user.full_name || 'Не указано'}</span>
-                        <span class="user-email">${user.email}</span>
-                    </div>
-                    <span class="user-role ${roleClass}">${roleText}</span>
-                </div>
-                <div class="admin-user-actions">
-                    <button class="admin-user-edit" onclick="editUser(${user.id})">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-    });
-    
-    container.innerHTML = html;
-}
-
-function filterUsers() {
-    const searchTerm = document.getElementById('userSearch').value.toLowerCase();
-    
-    if (!window.allUsers) return;
-    
-    const filtered = window.allUsers.filter(user => {
-        return user.email.toLowerCase().includes(searchTerm) ||
-               (user.full_name && user.full_name.toLowerCase().includes(searchTerm));
-    });
-    
-    displayUsers(filtered);
-}
-
-async function editUser(userId) {
-    const token = localStorage.getItem('token');
-    
-    try {
-        // В реальном проекте здесь должен быть эндпоинт для получения пользователя по ID
-        const user = window.allUsers.find(u => u.id === userId);
-        
-        document.getElementById('editUserId').value = user.id;
-        document.getElementById('editUserEmail').value = user.email;
-        document.getElementById('editUserFullName').value = user.full_name || '';
-        document.getElementById('editUserRole').value = user.role || 'user';
-        document.getElementById('editUserActive').checked = user.is_active !== false;
-        
-        document.getElementById('userModal').style.display = 'block';
-    } catch (err) {
-        console.error('Ошибка загрузки пользователя:', err);
-        showNotif('Ошибка загрузки пользователя', 'error');
-    }
-}
-
-function closeUserModal() {
-    document.getElementById('userModal').style.display = 'none';
-}
-
-async function handleSaveUser(event) {
-    event.preventDefault();
-    
-    const token = localStorage.getItem('token');
-    const userId = document.getElementById('editUserId').value;
-    
-    // В реальном проекте здесь должен быть эндпоинт для обновления пользователя
-    showNotif('Функция обновления пользователя в разработке', 'info');
-    closeUserModal();
 }
 
 // ==================== СТАТИСТИКА ====================
